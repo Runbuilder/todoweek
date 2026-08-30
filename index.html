@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.7</title>
+<title>AI Weekly Intelligence V7.8</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,7 +410,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.7 source-first attribution */
+/* V7.8 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
@@ -436,7 +436,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .source-test-result.error{border-color:#743746;background:#2a151c;color:#ff9aaa}
 
 
-/* V7.7 board visibility */
+/* V7.8 board visibility */
 .board-summary{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:10px
 }
@@ -454,6 +454,16 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   padding:4px 8px;border-radius:999px;background:rgba(255,189,66,.08);border:1px solid rgba(255,189,66,.22);
   color:#e9bb67;font-size:9px;font-weight:800
 }
+
+
+.source-origin-link{text-decoration:none;cursor:pointer}
+.source-origin-link:hover{filter:brightness(1.15);text-decoration:underline;text-underline-offset:2px}
+.production-sources{margin-top:10px;padding-top:10px;border-top:1px solid #29374e}
+.production-sources-title{font-size:10px;font-weight:900;color:#b8c7dc;margin-bottom:7px}
+.production-source-list{display:flex;gap:6px;flex-wrap:wrap}
+.production-source{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:8px;border:1px solid #33445f;background:#111d30;color:#a9c2e8;text-decoration:none;font-size:9px;font-weight:800;max-width:280px}
+.production-source:hover{border-color:#4d8aff;color:#dce9ff}
+.production-source .kind{opacity:.72;font-size:8px}
 
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -486,8 +496,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   <div class="brand">
     <div class="brand-logo">W</div>
     <div>
-      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.7</span></div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.7</div>
+      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.8</span></div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.8</div>
     </div>
   </div>
 
@@ -658,6 +668,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
       <div class="detail-section" id="scriptSection" style="display:none">
         <div class="detail-label">▶ 유튜브 스크립트</div>
         <div class="content-box" id="detailYoutubeScript"></div>
+        <div class="production-sources" id="detailYoutubeSources" style="display:none"></div>
       </div>
       <div class="action-status" id="detailActionStatus"></div>
     </div>
@@ -730,6 +741,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
             placeholder="아래 '유튜브 콘텐츠 생성' 버튼을 누르면 이 카드의 뉴스·전망·출처를 바탕으로 스크립트를 작성합니다."
           ></textarea>
           <div class="youtube-status" id="youtubeStatus"></div>
+          <div class="production-sources" id="cardYoutubeSources" style="display:none"></div>
         </div>
       </div>
 
@@ -1111,6 +1123,7 @@ let authInitializing=false;
 let aiKeyReady=false;
 let aiKeyMeta=null;
 let sourceRuntimeStatus={};
+let youtubeSourcesDraft=[];
 
 function saveState(){
   state.schemaVersion=SCHEMA_VERSION;
@@ -1380,7 +1393,9 @@ function createCard(card){
         <span class="badge status-${card.status}">${status.label}</span>
         ${card.timeLabel?`<span class="badge">${escapeHtml(card.timeLabel)}</span>`:""}
         <span class="badge impact-${card.impact||"medium"}">${impactLabels[card.impact]||"보통"}</span>
-        <span class="badge source-origin-badge ${getCardSourceKind(card)}" title="${escapeHtml(card.primarySourceUrl||"")}">${escapeHtml(getCardSourceLabel(card))}</span>
+        ${getCardProfileUrl(card)
+          ?`<a class="badge source-origin-badge source-origin-link ${getCardSourceKind(card)}" href="${escapeHtml(getCardProfileUrl(card))}" target="_blank" rel="noopener noreferrer" title="원 채널 열기">${escapeHtml(getCardSourceLabel(card))}</a>`
+          :`<span class="badge source-origin-badge ${getCardSourceKind(card)}">${escapeHtml(getCardSourceLabel(card))}</span>`}
         ${card.primarySourceKind==="reference"&&card.sourcePublishedAt?`<span class="badge" title="원문 게시일">원문 ${escapeHtml(card.sourcePublishedAt)}</span>`:""}
         ${card.deepAnalysis?`<span class="badge deep-ready">심층</span>`:""}
         ${card.youtubeScript?`<span class="badge script-ready">▶ 스크립트</span>`:""}
@@ -1392,6 +1407,7 @@ function createCard(card){
   el.addEventListener("dragstart",e=>e.dataTransfer.setData("cardId",card.id));
   el.addEventListener("click",()=>openDetailModal(card.id));
   el.querySelector(".card-menu").onclick=e=>{e.stopPropagation();openCardModal(card)};
+  el.querySelectorAll(".source-origin-link").forEach(a=>a.onclick=e=>e.stopPropagation());
   return el;
 }
 
@@ -1423,7 +1439,9 @@ function openDetailModal(cardId){
     <span class="badge">${escapeHtml(card.dateKey||"")}</span>
     ${card.timeLabel?`<span class="badge">${escapeHtml(card.timeLabel)}</span>`:""}
     <span class="badge impact-${card.impact||"medium"}">${impactLabels[card.impact]||"보통"}</span>
-    <span class="badge source-origin-badge ${getCardSourceKind(card)}" title="${escapeHtml(card.primarySourceUrl||"")}">${escapeHtml(getCardSourceLabel(card))}</span>
+    ${getCardProfileUrl(card)
+      ?`<a class="badge source-origin-badge source-origin-link ${getCardSourceKind(card)}" href="${escapeHtml(getCardProfileUrl(card))}" target="_blank" rel="noopener noreferrer" title="원 채널 열기">${escapeHtml(getCardSourceLabel(card))}</a>`
+      :`<span class="badge source-origin-badge ${getCardSourceKind(card)}">${escapeHtml(getCardSourceLabel(card))}</span>`}
     ${card.sourcePublishedAt?`<span class="badge">출처 게시 ${escapeHtml(card.sourcePublishedAt)}</span>`:""}`;
   document.getElementById("detailTitle").textContent=card.title||"";
   document.getElementById("detailSummary").textContent=card.summary||"내용 없음";
@@ -1457,19 +1475,43 @@ function renderDetailSources(card){
     return;
   }
 
-  (card.sourceUrls||[]).filter(validHttpUrl).forEach(url=>{
+  const profile=getCardProfileUrl(card);
+  const items=[];
+
+  if(validHttpUrl(profile))items.push({url:profile,label:`채널 · ${getCardSourceLabel(card)}`});
+  if(validHttpUrl(card.primarySourceUrl||""))items.push({url:card.primarySourceUrl,label:"원 게시물"});
+
+  for(const url of card.sourceUrls||[]){
+    if(!validHttpUrl(url)||url===profile||url===card.primarySourceUrl)continue;
+    if(url.includes("rss.app/feeds/"))items.push({url,label:"RSS 원본"});
+    else if(isYouTubeVideo(url))items.push({url,label:"영상 자료"});
+    else items.push({url,label:`검증 · ${domainName(url)}`});
+  }
+
+  const seen=new Set();
+  for(const item of items){
+    if(seen.has(item.url))continue;
+    seen.add(item.url);
     const a=document.createElement("a");
-    a.href=url;a.target="_blank";a.rel="noopener noreferrer";
-    a.className="detail-source";a.textContent=domainName(url);
+    a.href=item.url;a.target="_blank";a.rel="noopener noreferrer";
+    a.className="detail-source";a.textContent=item.label;
     el.appendChild(a);
-  });
-  if(!(card.sourceUrls||[]).length)el.textContent="등록된 출처가 없습니다.";
+  }
+
+  if(!items.length)el.textContent="등록된 출처가 없습니다.";
 }
 
 function renderDetailGenerated(card){
   const deep=document.getElementById("deepSection"),script=document.getElementById("scriptSection");
   if(card.deepAnalysis){deep.style.display="block";document.getElementById("detailDeepAnalysis").textContent=card.deepAnalysis}else deep.style.display="none";
-  if(card.youtubeScript){script.style.display="block";document.getElementById("detailYoutubeScript").textContent=card.youtubeScript}else script.style.display="none";
+  if(card.youtubeScript){
+    script.style.display="block";
+    document.getElementById("detailYoutubeScript").textContent=card.youtubeScript;
+    renderProductionSources("detailYoutubeSources",card.youtubeSources||[]);
+  }else{
+    script.style.display="none";
+    renderProductionSources("detailYoutubeSources",[]);
+  }
 }
 
 function setDetailStatus(text,type=""){
@@ -1501,6 +1543,8 @@ function openCardModal(card=null,defaultDate=null){
   document.getElementById("cardTitle").value=card?.title||"";
   document.getElementById("cardSummary").value=card?.summary||"";
   document.getElementById("cardYoutubeScript").value=card?.youtubeScript||"";
+  youtubeSourcesDraft=Array.isArray(card?.youtubeSources)?structuredClone(card.youtubeSources):[];
+  renderProductionSources("cardYoutubeSources",youtubeSourcesDraft);
   document.getElementById("cardWhy").value=card?.whyImportant||"";
   document.getElementById("cardOutlook").value=card?.outlook||"";
   document.getElementById("cardWatchpoints").value=(card?.watchpoints||[]).join("\n");
@@ -1536,6 +1580,7 @@ function readCardForm(){
     mode:existing?.mode||"manual",
     studyRange:existing?.studyRange||"",
     primarySourceLabel:existing?.primarySourceLabel||"일반웹",
+    primarySourceProfileUrl:existing?.primarySourceProfileUrl||"",
     primarySourceUrl:existing?.primarySourceUrl||"",
     primarySourceKind:existing?.primarySourceKind||"web",
     sourceFiles:existing?.sourceFiles||[],
@@ -1548,6 +1593,7 @@ function readCardForm(){
     title,
     summary:document.getElementById("cardSummary").value.trim(),
     youtubeScript:document.getElementById("cardYoutubeScript").value.trim(),
+    youtubeSources:structuredClone(youtubeSourcesDraft||[]),
     whyImportant:document.getElementById("cardWhy").value.trim(),
     outlook:document.getElementById("cardOutlook").value.trim(),
     watchpoints:splitLines(document.getElementById("cardWatchpoints").value),
@@ -1595,6 +1641,8 @@ document.getElementById("youtubeGenerateBtn").onclick=async()=>{
   try{
     const text=await generateYoutubeScriptForCard(card);
     document.getElementById("cardYoutubeScript").value=text;
+    youtubeSourcesDraft=Array.isArray(card.youtubeSources)?structuredClone(card.youtubeSources):[];
+    renderProductionSources("cardYoutubeSources",youtubeSourcesDraft);
     document.getElementById("cardYoutubePanel").style.display="block";
     statusEl.className="youtube-status success";
     statusEl.textContent="✓ 스크립트를 생성했습니다. 저장하면 카드에 보관됩니다.";
@@ -1607,7 +1655,14 @@ document.getElementById("detailYoutubeBtn").onclick=async()=>{
   if(!aiKeyReady){hideModal("detailModal");openSettings();setSettingsStatus("본인의 Gemini API Key를 먼저 등록하세요.","error");return}
   const id=document.getElementById("detailCardId").value,card=getCards().find(x=>x.id===id);if(!card)return;
   setLoadingButton("detailYoutubeBtn",true,"스크립트 생성 중");setDetailStatus("최신 사실을 확인하고 유튜브 스크립트를 작성하고 있습니다...");
-  try{card.youtubeScript=await generateYoutubeScriptForCard(card);saveState();renderBoard();renderDetailGenerated(card);setDetailStatus("✓ 유튜브 스크립트를 카드에 저장했습니다.","success")}
+  try{
+    card.youtubeScript=await generateYoutubeScriptForCard(card);
+    saveState();
+    if(isSupabaseReady())await pushAllToSupabase();
+    renderBoard();
+    renderDetailGenerated(card);
+    setDetailStatus("✓ 유튜브 스크립트와 제작 참고 링크를 카드에 저장했습니다.","success");
+  }
   catch(e){setDetailStatus(e.message||"스크립트 생성 오류","error")}
   finally{resetLoadingButton("detailYoutubeBtn","▶ 유튜브 콘텐츠 생성")}
 };
@@ -1679,7 +1734,11 @@ B 유형이 아니라면 첫 문장만 들어도 무엇에 관한 영상인지, 
 전문가가 강단에서 강의하는 느낌보다 시청자 옆에서 같은 화면이나 자료를 보며 같이 이해하는 느낌으로 쓴다.
 TTS로 읽었을 때 자연스럽고 이해하기 쉬운 문장을 사용한다.
 전문 용어는 필요할 때 사용하되 바로 쉬운 말로 풀어준다.
-같은 종결어미를 3번 이상 연속 반복하지 않는다.
+같은 종결어미를 2번 이상 연속 반복하지 않는다.
+특히 모든 문장을 "~입니다", "~습니다"로 끝내는 보고서체를 금지한다.
+전체 문장의 종결을 자연스럽게 섞는다. 예를 들어 "~입니다", "~인데요", "~죠", "~거든요", "~됩니다", "~할 수 있습니다", "~보겠습니다", "~라는 뜻입니다" 등을 문맥에 맞게 교차 사용한다.
+설명을 이어가는 문장에서는 "~인데요", "~죠", "~거든요" 같은 구어적 연결을 적절히 사용하되, 모든 문장을 억지로 "~요"체로 바꾸지는 않는다.
+TTS로 읽었을 때 실제 사람이 설명하는 리듬이 느껴지도록 한 단락 안에서도 문장 길이와 종결 리듬을 바꾼다.
 지나치게 짧은 문장을 연달아 나열하지 않는다.
 너무 긴 한 문장에 여러 정보를 억지로 넣지 않는다.
 "이것", "이렇게", "이런 식으로" 같은 지시대명사를 남발하지 말고 실제 대상을 직접 말한다.
@@ -1739,6 +1798,7 @@ C 비교·분석·트렌드: 약 3,800~4,800자
 - 기능 나열보다 구체적 사례와 실제 결과가 많은가?
 - 확인되지 않은 UI나 경험을 지어내지 않았는가?
 - 한계와 주의점을 필요한 위치에서 숨기지 않았는가?
+- "~입니다/~습니다"가 반복되는 보고서체가 아니라 실제 말하듯 종결어미가 자연스럽게 섞였는가?
 - TTS용 순수 텍스트 형식을 지켰는가?
 - 마지막에 런빌드 엔딩이 포함되었는가?
 
@@ -1804,6 +1864,7 @@ ${(card.sourceFiles||[]).join("\n")||"첨부 문서"}
 
     const resultText=extractLastText(result);
     if(!resultText)throw new Error("유튜브 스크립트 응답이 비어 있습니다.");
+    card.youtubeSources=buildYoutubeReferenceItems(card,extractCitations(result));
     return resultText.trim();
   }
 
@@ -1853,6 +1914,8 @@ ${regularUrls.join("\n")||"별도 URL 없음"}
 - 경제·증시·정책·교육·사회 이슈·산업 흐름·비교·전망이면 기본적으로 C 유형을 적용한다.
 - 카드의 기존 전망이 최신 사실과 충돌하면 최신 검증 사실을 우선하고, 확인되지 않은 전망은 가능성으로 표현한다.
 - 제공된 YouTube 영상이 있으면 영상 내용을 사실 근거로 활용하되, 영상에서 확인되지 않은 내용을 지어내지 않는다.
+- Google Search를 사용할 때는 사실 검증뿐 아니라 영상 제작 중 사진·영상·공식 데모 화면을 찾기 쉬운 공식 발표, 제품 페이지, 개발자 문서, 신뢰할 수 있는 기사도 적극 확인한다.
+- 출처 링크 자체는 대본 본문에 삽입하지 않는다. 링크는 시스템이 별도의 '제작 참고자료' 영역에 표시하므로 대본은 자연스러운 TTS 문장만 유지한다.
 - 결과에는 대본 본문만 출력한다.`;
 
   const input=[{type:"text",text:prompt},...youtubeVideos.map(uri=>({type:"video",uri}))];
@@ -1867,6 +1930,7 @@ ${regularUrls.join("\n")||"별도 URL 없음"}
 
   const resultText=extractLastText(result);
   if(!resultText)throw new Error("유튜브 스크립트 응답이 비어 있습니다.");
+  card.youtubeSources=buildYoutubeReferenceItems(card,extractCitations(result));
   return resultText.trim();
 }
 
@@ -2058,6 +2122,104 @@ function ensureSourceCoverage(selected,pool,maxTotal=8){
   }
 
   return out.slice(0,maxTotal);
+}
+
+function cleanSourceHandle(label=""){
+  return String(label||"").trim().replace(/^@/,"").replace(/\s*\([^)]*\)\s*$/,"").trim();
+}
+
+function inferSourceProfileUrl(source={},item={},sourceLabel=""){
+  const feedLink=String(source.feed_link||"").trim();
+  if(validHttpUrl(feedLink)){
+    try{
+      const u=new URL(feedLink);
+      const path=u.pathname.replace(/\/+$/,"");
+      const isPost=/\/p\/|\/reel\/|\/reels\/|\/post\//i.test(path);
+      if(!isPost && !u.hostname.includes("rss.app")){
+        if(u.hostname.includes("threads.net")){
+          return `https://www.threads.com${u.pathname.replace(/\/$/,"")}`;
+        }
+        return u.toString();
+      }
+    }catch(_){}
+  }
+
+  const itemUrl=String(item.link||"").trim();
+  if(validHttpUrl(itemUrl)){
+    try{
+      const u=new URL(itemUrl);
+      if(u.hostname.includes("threads.com")||u.hostname.includes("threads.net")){
+        const m=u.pathname.match(/\/(@[^/]+)/);
+        if(m)return `https://www.threads.com/${m[1]}`;
+      }
+      if(u.hostname.includes("instagram.com")){
+        const handle=cleanSourceHandle(sourceLabel);
+        if(handle && !["instagram","rss 피드"].includes(handle.toLowerCase())){
+          return `https://www.instagram.com/${handle}/`;
+        }
+      }
+    }catch(_){}
+  }
+
+  const handle=cleanSourceHandle(sourceLabel);
+  if(!handle)return "";
+  if(String(sourceLabel).trim().startsWith("@"))return `https://www.threads.com/@${handle}`;
+  if(/^[a-z0-9._]+$/i.test(handle))return `https://www.instagram.com/${handle}/`;
+  return "";
+}
+
+function getCardProfileUrl(card){
+  if(validHttpUrl(card?.primarySourceProfileUrl||""))return card.primarySourceProfileUrl;
+  return inferSourceProfileUrl({}, {link:card?.primarySourceUrl||""}, getCardSourceLabel(card));
+}
+
+function uniqueReferenceObjects(items=[]){
+  const map=new Map();
+  for(const item of items){
+    const url=String(item?.url||"").trim();
+    if(!validHttpUrl(url)||map.has(url))continue;
+    map.set(url,{url,kind:String(item.kind||"참고자료"),label:String(item.label||domainName(url))});
+  }
+  return [...map.values()];
+}
+
+function buildYoutubeReferenceItems(card,citationUrls=[]){
+  const items=[];
+  const profile=getCardProfileUrl(card);
+
+  if(validHttpUrl(profile))items.push({url:profile,kind:"원 채널",label:getCardSourceLabel(card)});
+  if(validHttpUrl(card?.primarySourceUrl||""))items.push({url:card.primarySourceUrl,kind:"원 게시물",label:domainName(card.primarySourceUrl)});
+
+  for(const url of card?.sourceUrls||[]){
+    if(!validHttpUrl(url)||url===profile||url===card.primarySourceUrl)continue;
+    if(url.includes("rss.app/feeds/"))items.push({url,kind:"RSS",label:"RSS 원본"});
+    else if(isYouTubeVideo(url))items.push({url,kind:"영상",label:"YouTube"});
+    else items.push({url,kind:"카드 검증",label:domainName(url)});
+  }
+
+  for(const url of citationUrls||[]){
+    if(validHttpUrl(url))items.push({url,kind:"스크립트 검증",label:domainName(url)});
+  }
+
+  return uniqueReferenceObjects(items).slice(0,30);
+}
+
+function renderProductionSources(containerId,sources=[]){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const items=Array.isArray(sources)?sources.filter(x=>validHttpUrl(x?.url||"")):[];
+  if(!items.length){el.style.display="none";el.innerHTML="";return}
+
+  el.style.display="block";
+  el.innerHTML=`<div class="production-sources-title">🔗 제작 참고자료 · 원문/사진/영상 자료 찾기</div><div class="production-source-list"></div>`;
+  const list=el.querySelector(".production-source-list");
+  for(const item of items){
+    const a=document.createElement("a");
+    a.href=item.url;a.target="_blank";a.rel="noopener noreferrer";
+    a.className="production-source";
+    a.innerHTML=`<span class="kind">${escapeHtml(item.kind||"참고")}</span><span>${escapeHtml(item.label||domainName(item.url))}</span>`;
+    list.appendChild(a);
+  }
 }
 
 function sourceType(url){
@@ -2650,6 +2812,7 @@ async function analyzePrioritySources(userPrompt=""){
       allItems.push({
         candidateId:`rss_${allItems.length+1}`,
         sourceLabel:chooseSourceLabel(source,item),
+        sourceProfileUrl:inferSourceProfileUrl(source,item,chooseSourceLabel(source,item)),
         sourceRootUrl:source.url,
         itemUrl,
         publishedAt:normalizeSourceDate(item.published),
@@ -2707,20 +2870,13 @@ ACCESS: OK 또는 FAILED`,
   let selectionText="";
 
   if(allItems.length){
-    setProgress(
-      "2단계 · 참고소스 주제 선별",
-      `RSS ${rssUrls.length}개에서 실제 ${allItems.length}개 항목을 읽었습니다. 소스별 균형을 유지해 유튜브 소재를 고릅니다.`
-    );
+    const sourceRoots=[...new Set(allItems.map(x=>x.sourceRootUrl))];
+    const groups=sourceRoots.map(root=>allItems.filter(x=>x.sourceRootUrl===root));
 
-    const candidatePool=balancedSourceCandidates(allItems,40,14);
-    const candidateText=candidatePool.map(x=>[
-      `ID: ${x.candidateId}`,
-      `SOURCE: ${x.sourceLabel}`,
-      `PUBLISHED: ${x.rawPublishedAt||x.publishedAt||"미상"}`,
-      `TITLE: ${x.rawTitle||"(제목 없음)"}`,
-      `SUMMARY: ${(x.rawSummary||"").slice(0,1500)}`,
-      `URL: ${x.itemUrl}`
-    ].join("\n")).join("\n\n---\n\n");
+    setProgress(
+      "2단계 · 참고소스 개별 선별",
+      `${groups.length}개 소스를 각각 독립적으로 분석합니다. 한 소스의 내용이 다른 소스에 묻히지 않게 처리합니다.`
+    );
 
     const schema={
       type:"object",
@@ -2741,9 +2897,26 @@ ACCESS: OK 또는 FAILED`,
       required:["selected"]
     };
 
-    const selectionResult=await postInteraction({
-      model:state.settings.analysisModel,
-      input:`당신은 AI·테크 유튜브 콘텐츠 에디터다.
+    const perSourceSelections=[];
+
+    for(let sourceIndex=0;sourceIndex<groups.length;sourceIndex++){
+      const group=groups[sourceIndex].slice(0,14);
+      const sourceName=group[0]?.sourceLabel||`소스 ${sourceIndex+1}`;
+      setProgress("2단계 · 참고소스 개별 선별",`${sourceIndex+1}/${groups.length} · ${sourceName} 게시물 ${group.length}개 분석 중`);
+
+      const candidateText=group.map(x=>[
+        `ID: ${x.candidateId}`,
+        `PUBLISHED: ${x.rawPublishedAt||x.publishedAt||"미상"}`,
+        `TITLE: ${x.rawTitle||"(제목 없음)"}`,
+        `SUMMARY: ${(x.rawSummary||"").slice(0,1700)}`,
+        `URL: ${x.itemUrl}`
+      ].join("\n")).join("\n\n---\n\n");
+
+      let parsed={selected:[]};
+      try{
+        const result=await postInteraction({
+          model:state.settings.analysisModel,
+          input:`당신은 AI·테크 유튜브 콘텐츠 에디터다.
 
 [현재 메뉴]
 ${currentChannel().label}
@@ -2751,49 +2924,62 @@ ${currentChannel().label}
 [사용자 요청]
 ${userPrompt}
 
-아래는 사용자가 직접 지정한 RSS에서 서버가 실제로 읽어 온 게시물이다.
+[현재 참고소스]
+${sourceName}
+
+아래는 이 한 소스에서 서버가 실제로 읽은 게시물이다.
 원문 게시일이 선택 주간과 맞지 않아도 버리지 않는다.
-목적은 달력의 사건 날짜를 맞추는 것이 아니라 사용자가 유튜브로 만들 가치가 있는 주제를 발굴하는 것이다.
+이 소스 안에서 유튜브 콘텐츠로 가치가 높은 항목을 최대 3개 고른다.
+새로움, 실전 활용성, 시청자 관심, 비교·검증·튜토리얼 확장성을 기준으로 선택한다.
+candidateId는 그대로 사용하고 새 항목을 만들지 않는다.
 
-가장 쓸모 있는 항목을 최대 8개 고른다.
-여러 SOURCE가 있다면 특정 소스에 몰리지 않게 각 SOURCE에서 최소 1개씩 우선 검토한다.
-가능하면 각 SOURCE에서 1~3개씩 균형 있게 선택한다.
-- 새로움
-- 실전 활용성
-- 시청자가 궁금해할 변화
-- 비교·검증·튜토리얼 확장성
-을 우선한다.
-candidateId는 원문 그대로 사용한다. 새 항목을 만들지 않는다.
-
-[실제 RSS 항목]
 ${candidateText}`,
-      response_format:{type:"text",mime_type:"application/json",schema}
-    });
+          response_format:{type:"text",mime_type:"application/json",schema}
+        });
+        parsed=parseModelJsonSafe(extractLastText(result),{selected:[]},`소스 ${sourceName} 주제선별 JSON`);
+      }catch(error){
+        console.warn(`${sourceName} 개별 선별 실패 — 원문 후보를 유지합니다.`,error);
+      }
 
-    const parsed=parseModelJsonSafe(
-      extractLastText(selectionResult),
-      {selected:[]},
-      "참고소스 주제선별 JSON"
-    );
-    const byId=new Map(allItems.map(x=>[x.candidateId,x]));
-    const aiSelected=(Array.isArray(parsed.selected)?parsed.selected:[])
-      .map(sel=>byId.has(sel.candidateId)?{
-        ...byId.get(sel.candidateId),
-        contentAngle:String(sel.contentAngle||"").trim(),
-        usefulnessReason:String(sel.usefulnessReason||"").trim()
-      }:null)
-      .filter(Boolean);
+      const byId=new Map(group.map(x=>[x.candidateId,x]));
+      const picked=(Array.isArray(parsed.selected)?parsed.selected:[])
+        .map(sel=>byId.has(sel.candidateId)?{
+          ...byId.get(sel.candidateId),
+          contentAngle:String(sel.contentAngle||"").trim(),
+          usefulnessReason:String(sel.usefulnessReason||"").trim()
+        }:null)
+        .filter(Boolean)
+        .slice(0,3);
 
-    selectedItems=ensureSourceCoverage(aiSelected,candidatePool,8)
-      .map(x=>({
+      perSourceSelections.push(...(picked.length?picked:group.slice(0,2)).map(x=>({
         ...x,
         contentAngle:x.contentAngle||x.rawTitle,
         usefulnessReason:x.usefulnessReason||"사용자 지정 참고소스에서 직접 수집된 콘텐츠 후보"
-      }));
+      })));
+    }
+
+    const selectionGroups=[...new Set(perSourceSelections.map(x=>x.sourceRootUrl))]
+      .map(root=>perSourceSelections.filter(x=>x.sourceRootUrl===root));
+
+    selectedItems=[];
+    let round=0;
+    while(selectedItems.length<8){
+      let added=false;
+      for(const group of selectionGroups){
+        if(group[round]){
+          selectedItems.push(group[round]);
+          added=true;
+          if(selectedItems.length>=8)break;
+        }
+      }
+      if(!added)break;
+      round++;
+    }
 
     selectionText=selectedItems.map(x=>[
       `CANDIDATE_ID: ${x.candidateId}`,
       `SOURCE_LABEL: ${x.sourceLabel}`,
+      `SOURCE_PROFILE_URL: ${x.sourceProfileUrl||""}`,
       `SOURCE_ROOT_URL: ${x.sourceRootUrl}`,
       `ITEM_URL: ${x.itemUrl}`,
       `PUBLISHED_AT: ${x.publishedAt||x.rawPublishedAt||"미상"}`,
@@ -3080,6 +3266,7 @@ ${fileNames.join("\n")}
       sourcePublishedAt:"",
       temporalBasis:"첨부 문서의 내용 구조와 학습 순서를 기준으로 배치",
       primarySourceLabel:"첨부문서",
+      primarySourceProfileUrl:"",
       primarySourceUrl:"",
       primarySourceKind:"reference",
       sourceUrls:[],
@@ -3195,6 +3382,7 @@ ${evidence}
       title:x.title||src.rawTitle||"참고소스 주제",
       summary:x.summary||src.rawSummary||"참고소스에서 수집된 원문 요약을 확인하세요.",
       youtubeScript:"",
+      youtubeSources:[],
       deepAnalysis:"",
       whyImportant:x.whyImportant||src.usefulnessReason||"유튜브 콘텐츠 후보로 검토할 가치가 있는 참고소스 항목",
       outlook:x.outlook||"필요하면 카드의 심층 분석에서 공식 자료와 추가 사실을 검증하세요.",
@@ -3208,6 +3396,7 @@ ${evidence}
       sourcePublishedAt:src.publishedAt||src.rawPublishedAt||"",
       temporalBasis:"",
       primarySourceLabel:src.sourceLabel||"참고소스",
+      primarySourceProfileUrl:src.sourceProfileUrl||inferSourceProfileUrl({}, {link:itemUrl}, src.sourceLabel),
       primarySourceUrl:itemUrl||"",
       primarySourceKind:"reference",
       sourceUrls:[...new Set([itemUrl,src.sourceRootUrl,...verification].filter(validHttpUrl))]
@@ -3344,6 +3533,7 @@ ${report}
       title:x.title,
       summary:x.summary||"",
       youtubeScript:"",
+      youtubeSources:[],
       deepAnalysis:"",
       whyImportant:x.whyImportant||"",
       outlook:x.outlook||"",
@@ -3351,6 +3541,7 @@ ${report}
       sourcePublishedAt:x.sourcePublishedAt||"",
       temporalBasis:x.temporalBasis||"",
       primarySourceLabel:webOnly?"일반웹":((x.primarySourceLabel||"일반웹").trim()||"일반웹"),
+      primarySourceProfileUrl:"",
       primarySourceUrl:validHttpUrl(x.primarySourceUrl||"")?x.primarySourceUrl:"",
       primarySourceKind:webOnly?"web":(x.primarySourceKind==="reference"?"reference":"web"),
       sourceUrls:Array.isArray(x.sourceUrls)?x.sourceUrls.filter(validHttpUrl):[]
@@ -3484,8 +3675,8 @@ function mergeBriefCards(newCards){
     const key=normalizeTitle(incoming.title);
     const existing=cards.find(c=>c.dateKey===incoming.dateKey&&normalizeTitle(c.title)===key);
     if(existing){
-      const deep=existing.deepAnalysis||"",script=existing.youtubeScript||"";
-      Object.assign(existing,incoming,{id:existing.id,deepAnalysis:deep,youtubeScript:script});updated++;
+      const deep=existing.deepAnalysis||"",script=existing.youtubeScript||"",ytSources=existing.youtubeSources||[];
+      Object.assign(existing,incoming,{id:existing.id,deepAnalysis:deep,youtubeScript:script,youtubeSources:ytSources});updated++;
     }else{cards.push(incoming);added++}
   }
   return{added,updated};
@@ -3935,6 +4126,7 @@ function flattenCardsForSupabase(){
           source_published_at:c.sourcePublishedAt||"",
           temporal_basis:c.temporalBasis||"",
           primary_source_label:c.primarySourceLabel||"일반웹",
+          primary_source_profile_url:c.primarySourceProfileUrl||getCardProfileUrl(c)||"",
           primary_source_url:c.primarySourceUrl||"",
           primary_source_kind:c.primarySourceKind||"web",
           source_urls:c.sourceUrls||[],
@@ -3943,6 +4135,7 @@ function flattenCardsForSupabase(){
           source_files:c.sourceFiles||[],
           deep_analysis:c.deepAnalysis||"",
           youtube_script:c.youtubeScript||"",
+          youtube_sources:Array.isArray(c.youtubeSources)?c.youtubeSources:[],
           updated_at:new Date().toISOString()
         });
       }
@@ -4071,13 +4264,15 @@ async function pullAllFromSupabase(){
         sourcePublishedAt:row.source_published_at||"",
         temporalBasis:row.temporal_basis||"",
         primarySourceLabel:row.primary_source_label||"일반웹",
+        primarySourceProfileUrl:row.primary_source_profile_url||"",
         primarySourceUrl:row.primary_source_url||"",
         primarySourceKind:row.primary_source_kind==="reference"?"reference":"web",
         sourceUrls:Array.isArray(row.source_urls)?row.source_urls:[],
         documentIds:Array.isArray(row.document_ids)?row.document_ids:[],
         sourceFiles:Array.isArray(row.source_files)?row.source_files:[],
         deepAnalysis:row.deep_analysis||"",
-        youtubeScript:row.youtube_script||""
+        youtubeScript:row.youtube_script||"",
+        youtubeSources:Array.isArray(row.youtube_sources)?row.youtube_sources:[]
       });
     }
 
@@ -4445,9 +4640,11 @@ document.getElementById("importFile").onchange=async e=>{
       id:x.id||crypto.randomUUID(),
       studyRange:x.studyRange||"",
       primarySourceLabel:x.primarySourceLabel||"일반웹",
+      primarySourceProfileUrl:x.primarySourceProfileUrl||"",
       primarySourceUrl:x.primarySourceUrl||"",
       primarySourceKind:x.primarySourceKind==="reference"?"reference":"web",
       youtubeScript:x.youtubeScript||"",
+      youtubeSources:Array.isArray(x.youtubeSources)?x.youtubeSources:[],
       deepAnalysis:x.deepAnalysis||""
     }));
     saveState();renderBoard();showToast("가져오기를 완료했습니다.");
