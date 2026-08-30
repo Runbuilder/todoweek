@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.1</title>
+<title>AI Weekly Intelligence V7.2</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,12 +410,16 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.1 source-first attribution */
+/* V7.2 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
 .source-warning{display:inline-flex;align-items:center;margin-left:6px;padding:2px 6px;border-radius:999px;font-size:8px;font-weight:850;background:#4b3420;color:#ffcb80;border:1px solid #6a4a29}
 .source-helper{margin-top:8px;padding:8px 10px;border-radius:9px;background:rgba(255,190,71,.07);border:1px solid rgba(255,190,71,.18);color:#aebbd0;font-size:9px;line-height:1.55}
+.source-read-status{display:inline-flex;align-items:center;padding:2px 6px;border-radius:999px;font-size:8px;font-weight:850;border:1px solid #34435d;color:#8ea0bb;background:#172137}
+.source-read-status.ok{border-color:#256247;background:#14362b;color:#75dcae}
+.source-read-status.error{border-color:#6c3443;background:#3a1d27;color:#ff90a2}
+.source-read-status.pending{border-color:#6b5528;background:#3a2e18;color:#ffd078}
 
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -449,7 +453,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
     <div class="brand-logo">W</div>
     <div>
       <div class="brand-title">AI Weekly Intelligence</div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.1</div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.2</div>
     </div>
   </div>
 
@@ -517,8 +521,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
         </div>
 
         <div class="source-helper">
-          Instagram·Threads의 프로필 URL은 로그인·동적 로딩·요청 제한 때문에 직접 읽기 실패가 발생할 수 있습니다.
-          이런 계정은 공개 RSS 피드(text/xml)를 등록하면 훨씬 안정적으로 "소스 우선 조사"에 활용할 수 있습니다.
+          Instagram·Threads 프로필은 직접 접근이 불안정합니다.
+          RSS.app의 공개 피드 URL을 등록하면 앱 서버가 RSS XML을 직접 읽고 ITEM 단위로 분석한 뒤 Google Search로 교차검증합니다.
         </div>
 
         <div class="source-actions">
@@ -963,6 +967,7 @@ const SUPABASE_URL = "https://uundurvrpouvdsoyyreb.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9RvgR3BVRGB-4oU-iFYQgw_abV5VMJm";
 const SUPABASE_BUCKET = "weekly-documents";
 const AI_EDGE_FUNCTION = "awi-ai";
+const SOURCE_EDGE_FUNCTION = "awi-source";
 
 const defaultState = {
   schemaVersion:SCHEMA_VERSION,
@@ -1066,6 +1071,7 @@ let authInitializing=false;
 /* Secure BYOK runtime: the actual API key is never stored here. */
 let aiKeyReady=false;
 let aiKeyMeta=null;
+let sourceRuntimeStatus={};
 
 function saveState(){
   state.schemaVersion=SCHEMA_VERSION;
@@ -1788,6 +1794,47 @@ function getCardSourceKind(card){
   return card.primarySourceKind==="reference"?"reference":"web";
 }
 
+function isRssAppFeed(url){
+  try{
+    const u=new URL(url);
+    const host=u.hostname.replace(/^www\./,"").toLowerCase();
+    return host==="rss.app" && /\/feeds\//i.test(u.pathname);
+  }catch{return false}
+}
+
+function setSourceRuntimeStatus(url,status,label){
+  sourceRuntimeStatus[url]={status,label};
+}
+
+function getSourceRuntimeStatus(url){
+  return sourceRuntimeStatus[url]||null;
+}
+
+async function invokeSourceEdge(urls){
+  if(!supabaseClient||!supabaseUser)throw new Error("Google 로그인이 필요합니다.");
+
+  const {data:{session},error}=await supabaseClient.auth.getSession();
+  if(error||!session)throw new Error("로그인 세션이 만료되었습니다.");
+
+  const response=await fetch(`${SUPABASE_URL}/functions/v1/${SOURCE_EDGE_FUNCTION}`,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":SUPABASE_PUBLISHABLE_KEY,
+      "Authorization":`Bearer ${session.access_token}`
+    },
+    body:JSON.stringify({urls})
+  });
+
+  const raw=await response.text();
+  let data={};
+  try{data=raw?JSON.parse(raw):{}}
+  catch{data={error:raw||"소스 서버 응답 파싱 실패"}}
+
+  if(!response.ok)throw new Error(data?.error||`소스 서버 오류 (${response.status})`);
+  return data;
+}
+
 function sourceType(url){
   const low=url.toLowerCase();
   if(isYouTubeVideo(url))return "YouTube 영상";
@@ -1817,8 +1864,9 @@ function renderSourceList(){
       <span class="source-type">${sourceType(url)}</span>
       <span class="source-url">${escapeHtml(url)}</span>
       ${isSocialProfileUrl(url)?`<span class="source-warning">RSS 권장</span>`:""}
+      ${getSourceRuntimeStatus(url)?`<span class="source-read-status ${getSourceRuntimeStatus(url).status}">${escapeHtml(getSourceRuntimeStatus(url).label)}</span>`:""}
       <button class="source-remove">×</button>`;
-    item.querySelector(".source-remove").onclick=()=>{currentSources().splice(index,1);saveState();renderSourceList()};
+    item.querySelector(".source-remove").onclick=()=>{delete sourceRuntimeStatus[url];currentSources().splice(index,1);saveState();renderSourceList()};
     el.appendChild(item);
   });
 }
@@ -2288,15 +2336,56 @@ async function analyzePrioritySources(){
   const urls=currentSources().filter(x=>!isYouTubeVideo(x)).slice(0,20);
   if(!urls.length)return {text:"",citations:[]};
 
-  setProgress("1단계 · 참고소스 우선 분석",`${urls.length}개 참고 URL을 먼저 직접 읽고 이번 주와 연결되는 항목을 추출합니다.`);
+  setProgress("1단계 · 참고소스 우선 분석",`${urls.length}개 참고소스를 먼저 직접 읽고 이번 주와 연결되는 항목을 추출합니다.`);
   document.getElementById("researchStatusPill").textContent="참고소스 분석";
+
+  const rssUrls=urls.filter(isRssAppFeed);
+  const contextUrls=urls.filter(url=>!isRssAppFeed(url));
+
+  const rssBlocks=[];
+  const rssCitations=[];
+
+  if(rssUrls.length){
+    rssUrls.forEach(url=>setSourceRuntimeStatus(url,"pending","RSS 읽는 중"));
+    renderSourceList();
+
+    try{
+      const fetched=await invokeSourceEdge(rssUrls);
+      for(const source of fetched.sources||[]){
+        if(source.status==="ok"){
+          setSourceRuntimeStatus(source.url,"ok",`✓ ${source.item_count||0}건`);
+          rssBlocks.push(source.normalized||"");
+          rssCitations.push(
+            source.url,
+            ...(source.items||[]).map(item=>item.link).filter(validHttpUrl)
+          );
+        }else{
+          setSourceRuntimeStatus(source.url,"error","읽기 실패");
+          rssBlocks.push(
+            `SOURCE_ROOT_URL: ${source.url}\nACCESS: FAILED\nERROR: ${source.error||"RSS 읽기 실패"}`
+          );
+        }
+      }
+    }catch(error){
+      console.error("RSS 직접 읽기 실패",error);
+      for(const url of rssUrls){
+        setSourceRuntimeStatus(url,"error","읽기 실패");
+        rssBlocks.push(`SOURCE_ROOT_URL: ${url}\nACCESS: FAILED\nERROR: ${error.message||error}`);
+      }
+    }
+    renderSourceList();
+  }
 
   const days=weekDays();
   const start=dateKey(days[0]),end=dateKey(days[6]);
-  const sourceLines=urls.map((url,i)=>`${i+1}. label_hint="${guessSourceLabel(url)}" | type="${sourceType(url)}" | ${url}`).join("\n");
+  const sourceLines=contextUrls.map((url,i)=>
+    `${i+1}. label_hint="${guessSourceLabel(url)}" | type="${sourceType(url)}" | ${url}`
+  ).join("\n");
+
+  const rssEvidence=rssBlocks.filter(Boolean).join("\n\n================ RSS SOURCE ================\n\n");
 
   const prompt=`당신은 사용자 지정 참고소스 전담 분석기다.
-이 단계에서는 Google Search를 사용하지 말고 아래 사용자가 직접 등록한 URL만 URL Context로 읽는다.
+이 단계에서는 Google Search를 사용하지 않는다.
 
 [선택 주간]
 ${start} ~ ${end}
@@ -2304,17 +2393,22 @@ ${start} ~ ${end}
 [분야]
 ${currentChannel().label}
 
-[사용자 지정 참고소스]
-${sourceLines}
+${rssEvidence?`[서버가 직접 읽고 파싱한 RSS 원문]
+아래 RSS 내용은 이미 서버에서 직접 가져온 실제 피드 데이터다. URL Context로 다시 가져오려 하지 말고 이 내용을 근거로 분석한다.
+
+${rssEvidence}`:""}
+
+${sourceLines?`[URL Context로 읽을 일반 참고소스]
+${sourceLines}`:""}
 
 규칙:
-1. 각 URL을 실제로 읽고 접근 가능한 소스에서만 내용을 추출한다.
-2. Instagram/Threads 프로필처럼 접근 제한 때문에 내용을 읽을 수 없다면 추측하지 말고 ACCESS: FAILED라고 적는다.
-3. RSS/Atom/XML 피드는 item/entry의 제목, 게시일, 설명/본문, 작성자, 원문 링크를 적극 활용한다.
+1. 서버가 직접 읽은 RSS는 ITEM별 제목·게시일·작성자·원문 링크·본문/설명을 실제 소스 근거로 사용한다.
+2. 일반 URL은 URL Context로 실제 접근 가능한 경우에만 사용한다.
+3. Instagram/Threads 프로필처럼 접근 제한 때문에 읽을 수 없다면 추측하지 않는다.
 4. 선택 주간에 게시되었거나 선택 주간 사건·일정을 직접 다루는 항목을 우선 추출한다.
 5. 각 후보마다 반드시 다음 형식을 사용한다.
 
-SOURCE_LABEL: 사람이 알아볼 수 있는 출처명 또는 계정 핸들. 예: @choi.openai
+SOURCE_LABEL: 사람이 알아볼 수 있는 출처명 또는 계정 핸들. RSS의 FEED_TITLE/AUTHOR 정보가 있으면 적극 활용한다.
 SOURCE_ROOT_URL: 사용자가 등록한 원래 URL
 ITEM_URL: 실제 개별 게시물 링크가 있으면 그 링크, 없으면 SOURCE_ROOT_URL
 PUBLISHED_AT: 확인된 게시일 또는 미상
@@ -2323,20 +2417,45 @@ TITLE: 핵심 주제
 SUMMARY: 해당 소스가 실제로 말한 핵심 내용
 ACCESS: OK 또는 FAILED
 
-6. 소스에 없는 사실은 외부 지식으로 보충하지 않는다.
+6. 소스에 없는 사실은 이 단계에서 외부 지식으로 보충하지 않는다.
 7. 접근 가능한 소스에서 이번 주 관련 후보가 없으면 "관련 후보 없음"이라고 적는다.
-8. RSS의 feed title, author, creator, profile handle이 확인되면 SOURCE_LABEL에 반영한다.`;
+8. RSS 원문이 제공된 경우 반드시 최소한 ITEM들을 검토하고, 단순히 일반웹 지식으로 대체하지 않는다.`;
 
-  const result=await postInteraction({
-    model:state.settings.analysisModel,
-    input:prompt,
-    tools:[{type:"url_context"}]
-  });
+  let result;
+
+  if(contextUrls.length){
+    contextUrls.forEach(url=>setSourceRuntimeStatus(url,"pending","URL 읽는 중"));
+    renderSourceList();
+
+    result=await postInteraction({
+      model:state.settings.analysisModel,
+      input:prompt,
+      tools:[{type:"url_context"}]
+    });
+
+    const cited=new Set(extractCitations(result));
+    for(const url of contextUrls){
+      // URL Context 응답 구조가 URL별 status를 항상 쉽게 노출하지 않으므로
+      // citation 또는 응답 내 URL 존재를 성공의 보수적 신호로 사용한다.
+      const used=cited.has(url)||(extractLastText(result)||"").includes(url);
+      setSourceRuntimeStatus(url,used?"ok":"error",used?"✓ 참조됨":"참조 확인 안됨");
+    }
+    renderSourceList();
+  }else{
+    result=await postInteraction({
+      model:state.settings.analysisModel,
+      input:prompt
+    });
+  }
 
   const output=extractLastText(result)||"";
   return {
     text:output,
-    citations:[...extractCitations(result),...extractHttpUrls(output)].filter(validHttpUrl)
+    citations:[
+      ...rssCitations,
+      ...extractCitations(result),
+      ...extractHttpUrls(output)
+    ].filter(validHttpUrl)
   };
 }
 
