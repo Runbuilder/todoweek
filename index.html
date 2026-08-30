@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.3</title>
+<title>AI Weekly Intelligence V7.4</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,7 +410,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.3 source-first attribution */
+/* V7.4 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
@@ -434,6 +434,26 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .source-test-result.show{display:block}
 .source-test-result.ok{border-color:#2b7052;background:#0f261f;color:#8ee0b8}
 .source-test-result.error{border-color:#743746;background:#2a151c;color:#ff9aaa}
+
+
+/* V7.4 board visibility */
+.board-summary{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:10px
+}
+.board-summary-total{
+  padding:4px 8px;border-radius:999px;background:#17243a;border:1px solid #32445f;
+  color:#a9b7cb;font-size:9px;font-weight:900
+}
+.board-day-chip{
+  border:1px solid #32445f;background:#101a2c;color:#8fa1bc;border-radius:999px;
+  padding:4px 7px;font-size:9px;font-weight:850;cursor:pointer
+}
+.board-day-chip:hover{border-color:#4d8aff;color:#d8e5ff}
+.board-day-chip.has-cards{background:rgba(77,138,255,.10);border-color:rgba(77,138,255,.38);color:#9fc0ff}
+.board-scroll-hint{
+  padding:4px 8px;border-radius:999px;background:rgba(255,189,66,.08);border:1px solid rgba(255,189,66,.22);
+  color:#e9bb67;font-size:9px;font-weight:800
+}
 
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -466,8 +486,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   <div class="brand">
     <div class="brand-logo">W</div>
     <div>
-      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.3</span></div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.3</div>
+      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.4</span></div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.4</div>
     </div>
   </div>
 
@@ -495,12 +515,15 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 </section>
 
 <section class="toolbar">
-  <div class="legend">
-    <span class="legend-item"><span class="legend-dot" style="background:#4d8aff"></span>보도</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#ff5068"></span>예정</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#8a62e8"></span>관전</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#ffbd42"></span>변동 가능</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#2fc785"></span>학습</span>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#4d8aff"></span>보도</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#ff5068"></span>예정</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#8a62e8"></span>관전</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#ffbd42"></span>변동 가능</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#2fc785"></span>학습</span>
+    </div>
+    <div class="board-summary" id="boardSummary"></div>
   </div>
   <div>
     <button class="secondary-btn" id="exportBtn">↓ 내보내기</button>
@@ -1228,6 +1251,7 @@ function renderBoard(){
     const key=dateKey(date);
     const column=document.createElement("section");
     column.className="day-column"+(sameDay(date,today)?" today":"");
+    column.dataset.date=key;
 
     const header=document.createElement("div");
     header.className="day-header";
@@ -1258,7 +1282,57 @@ function renderBoard(){
 
     column.appendChild(header);column.appendChild(list);board.appendChild(column);
   });
+  renderBoardSummary();
 }
+function renderBoardSummary(){
+  const el=document.getElementById("boardSummary");
+  if(!el)return;
+
+  const cards=getCards();
+  const days=weekDays();
+  const counts=days.map(d=>{
+    const key=dateKey(d);
+    return {key,count:cards.filter(c=>c.dateKey===key).length};
+  });
+
+  el.innerHTML="";
+  const total=document.createElement("span");
+  total.className="board-summary-total";
+  total.textContent=`이번 주 ${cards.length}개`;
+  el.appendChild(total);
+
+  counts.filter(x=>x.count>0).forEach((item,index)=>{
+    const chip=document.createElement("button");
+    chip.className="board-day-chip has-cards";
+    const dayIndex=days.findIndex(d=>dateKey(d)===item.key);
+    chip.textContent=`${dayNames[dayIndex]} ${item.count}`;
+    chip.onclick=()=>scrollToBoardDate(item.key);
+    el.appendChild(chip);
+  });
+
+  if(cards.length && counts.slice(0,5).every(x=>x.count===0) && counts.slice(5).some(x=>x.count>0)){
+    const hint=document.createElement("span");
+    hint.className="board-scroll-hint";
+    hint.textContent="← 토·일 카드가 오른쪽에 있습니다";
+    el.appendChild(hint);
+  }
+}
+
+function scrollToBoardDate(key,behavior="smooth"){
+  const column=document.querySelector(`.day-column[data-date="${CSS.escape(key)}"]`);
+  if(!column)return;
+  column.scrollIntoView({behavior,block:"nearest",inline:"center"});
+}
+
+function focusFirstVisibleGeneratedCard(cards){
+  if(!Array.isArray(cards)||!cards.length)return;
+  const valid=cards
+    .filter(c=>c?.dateKey)
+    .sort((a,b)=>String(a.dateKey).localeCompare(String(b.dateKey)));
+  if(!valid.length)return;
+  setTimeout(()=>scrollToBoardDate(valid[0].dateKey),80);
+}
+
 function importanceScore(v){return {high:3,medium:2,low:1}[v]||1}
 
 function createCard(card){
@@ -3043,12 +3117,29 @@ document.getElementById("generateBtn").onclick=async()=>{
 
     const result=mergeBriefCards(cards);
     saveState();
+
+    // 즉시 클라우드에도 반영한 뒤 현재 보드를 다시 렌더링한다.
+    if(isSupabaseReady()){
+      await pushAllToSupabase();
+    }
+
     renderAll();
+    focusFirstVisibleGeneratedCard(cards);
     hideModal("aiModal");
+
+    const dayCounts={};
+    for(const c of cards){
+      dayCounts[c.dateKey]=(dayCounts[c.dateKey]||0)+1;
+    }
+    const compactDays=Object.entries(dayCounts)
+      .sort(([a],[b])=>a.localeCompare(b))
+      .map(([d,n])=>`${Number(d.slice(5,7))}/${Number(d.slice(8,10))} ${n}개`)
+      .join(" · ");
+
     showToast(
       existingBefore
-        ? `업데이트 완료 · 새 카드 ${result.added}개 · 갱신 ${result.updated}개`
-        : `${result.added}개의 핵심 카드를 생성했습니다.`
+        ? `업데이트 완료 · 새 카드 ${result.added}개 · 갱신 ${result.updated}개${compactDays?` · ${compactDays}`:""}`
+        : `${result.added}개의 핵심 카드를 생성했습니다.${compactDays?` · ${compactDays}`:""}`
     );
   }catch(error){
     console.error(error);
