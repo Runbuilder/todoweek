@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.4</title>
+<title>AI Weekly Intelligence V7.5</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,7 +410,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.4 source-first attribution */
+/* V7.5 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
@@ -436,7 +436,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .source-test-result.error{border-color:#743746;background:#2a151c;color:#ff9aaa}
 
 
-/* V7.4 board visibility */
+/* V7.5 board visibility */
 .board-summary{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:10px
 }
@@ -486,8 +486,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   <div class="brand">
     <div class="brand-logo">W</div>
     <div>
-      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.4</span></div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.4</div>
+      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.5</span></div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.5</div>
     </div>
   </div>
 
@@ -1333,6 +1333,40 @@ function focusFirstVisibleGeneratedCard(cards){
   setTimeout(()=>scrollToBoardDate(valid[0].dateKey),80);
 }
 
+function normalizeSourceDate(value=""){
+  const raw=String(value||"").trim();
+  if(!raw)return "";
+  const d=new Date(raw);
+  if(!Number.isNaN(d.getTime())){
+    const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  }
+  const iso=raw.match(/\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})\b/);
+  if(iso)return `${iso[1]}-${String(iso[2]).padStart(2,"0")}-${String(iso[3]).padStart(2,"0")}`;
+  return raw.slice(0,24);
+}
+
+function chooseSourceLabel(source,item){
+  const author=String(item?.author||"").trim();
+  const feed=String(source?.feed_title||"").trim();
+  if(author && author.toLowerCase()!=="미상")return author;
+  if(feed && feed!=="RSS 피드")return feed;
+  return guessSourceLabel(source?.url||"");
+}
+
+function distributeReferenceCards(cards){
+  const dates=weekDays().map(dateKey);
+  if(!dates.length)return cards;
+  return cards.map((card,index)=>({
+    ...card,
+    dateKey:dates[index%dates.length],
+    timeLabel:card.sourcePublishedAt?`원문 ${card.sourcePublishedAt}`:"소스 발굴",
+    temporalBasis:
+      `사용자 지정 참고소스에서 발굴한 콘텐츠 후보를 선택 주간의 검토 슬롯에 분산 배치함.`+
+      (card.sourcePublishedAt?` 원문 게시일: ${card.sourcePublishedAt}.`:"")
+  }));
+}
+
 function importanceScore(v){return {high:3,medium:2,low:1}[v]||1}
 
 function createCard(card){
@@ -1347,6 +1381,7 @@ function createCard(card){
         ${card.timeLabel?`<span class="badge">${escapeHtml(card.timeLabel)}</span>`:""}
         <span class="badge impact-${card.impact||"medium"}">${impactLabels[card.impact]||"보통"}</span>
         <span class="badge source-origin-badge ${getCardSourceKind(card)}" title="${escapeHtml(card.primarySourceUrl||"")}">${escapeHtml(getCardSourceLabel(card))}</span>
+        ${card.primarySourceKind==="reference"&&card.sourcePublishedAt?`<span class="badge" title="원문 게시일">원문 ${escapeHtml(card.sourcePublishedAt)}</span>`:""}
         ${card.deepAnalysis?`<span class="badge deep-ready">심층</span>`:""}
         ${card.youtubeScript?`<span class="badge script-ready">▶ 스크립트</span>`:""}
       </div>
@@ -2439,18 +2474,17 @@ ${youtubeSummary?`[YouTube 영상 사전 분석 결과]\n${youtubeSummary}`:""}
 
 A. '게시일(publication date)'과 '사건일(event date)'을 절대 같은 것으로 간주하지 않는다.
 
-B. 카드가 선택 주간에 들어갈 수 있는 경우는 원칙적으로 다음뿐이다.
-- 선택 주간에 실제로 발생한 사건·발표·정책·실적·회의
-- 선택 주간에 공식적으로 예정되어 있고 날짜가 검증된 일정
-- 선택 주간에 새롭게 발생한 중대한 후속 전개가 있는 ongoing 이슈
+B. 이 Google Search 단계는 "일반웹 보완 뉴스"용이다.
+일반웹에서 새로 찾는 카드는 선택 주간에 실제로 발생했거나 공식적으로 예정된 사건을 중심으로 한다.
 
-C. 예를 들어 7월에 게시된 글이 "8월 28일 NVIDIA 실적발표"를 알리고 있다면,
-게시일은 7월이지만 사건일은 8월 28일이다. 선택 주간에 8월 28일이 포함되면 그 글을 근거로 활용할 수 있다.
+C. 사용자 지정 RSS/URL 소스는 별도 단계에서 "콘텐츠 후보 큐"로 처리한다.
+그 소스의 원문 게시일이 선택 주간과 달라도 유튜브 소재로 가치가 있으면 포함하며,
+원문 날짜는 sourcePublishedAt으로 보존하고 선택 주간에는 검토용 슬롯으로 분산 배치한다.
 
-D. 반대로 과거 게시물이 단지 과거 사건을 설명할 뿐이고 선택 주간에 새로운 사건이나 일정이 없다면,
-그 게시물은 배경자료로만 사용할 수 있으며 독립된 주간 카드로 만들면 안 된다.
+D. 따라서 사용자 참고소스의 콘텐츠를 날짜가 안 맞는다는 이유로 버리거나
+일반웹의 더 유명한 이슈로 대체하면 안 된다.
 
-E. RSS나 채널 페이지에 과거 게시물이 많이 보여도 최신성처럼 보이게 현재 주간 날짜로 임의 재배치하지 않는다.
+E. 일반웹 보완 카드는 실제 사건 날짜를 기준으로 배치한다.
 
 F. 각 후보 사건에 대해 다음 시간 정보를 분리해 기록하며 조사한다.
 - sourcePublishedAt: 대표 근거 자료가 게시된 날짜
@@ -2485,142 +2519,190 @@ L. 중요도가 낮은 기사, 반복 기사, 단순 홍보성 글은 제외한�
 /* ==========================================================
    10B. USER SOURCE-FIRST ANALYSIS
 ========================================================== */
-async function analyzePrioritySources(){
+async function analyzePrioritySources(userPrompt=""){
   const urls=currentSources().filter(x=>!isYouTubeVideo(x)).slice(0,20);
-  if(!urls.length)return {text:"",citations:[]};
+  if(!urls.length)return {text:"",citations:[],selectedItems:[],allItems:[]};
 
-  setProgress("1단계 · 참고소스 우선 분석",`${urls.length}개 참고소스를 먼저 직접 읽고 이번 주와 연결되는 항목을 추출합니다.`);
-  document.getElementById("researchStatusPill").textContent="참고소스 분석";
+  setProgress("1단계 · 참고소스 직접 수집",`${urls.length}개 참고소스에서 콘텐츠 후보를 직접 읽습니다.`);
+  document.getElementById("researchStatusPill").textContent="참고소스 수집";
 
-  const rssUrls=urls.filter(isRssAppFeed);
+  const rssUrls=urls.filter(isDirectFeedUrl);
   const contextUrls=urls.filter(url=>!isDirectFeedUrl(url));
-
-  const rssBlocks=[];
   const rssCitations=[];
+  const allItems=[];
+  const contextEvidence=[];
 
+  // RSS/XML은 '선택 주간과 날짜가 맞는가'로 걸러내지 않는다.
+  // 목적은 뉴스 달력의 사실 날짜가 아니라 유튜브 콘텐츠 후보 발굴이다.
   if(rssUrls.length){
     rssUrls.forEach(url=>setSourceRuntimeStatus(url,"pending","RSS 읽는 중"));
     renderSourceList();
 
-    try{
-      const fetched=await invokeSourceEdge(rssUrls);
-      for(const source of fetched.sources||[]){
-        if(source.status==="ok"){
-          setSourceRuntimeStatus(source.url,"ok",`✓ ${source.item_count||0}건`);
-          rssSuccessCount+=1;
-          rssItemCount+=Number(source.item_count||0);
-          rssBlocks.push(source.normalized||"");
-          rssCitations.push(
-            source.url,
-            ...(source.items||[]).map(item=>item.link).filter(validHttpUrl)
-          );
-        }else{
-          setSourceRuntimeStatus(source.url,"error","읽기 실패");
-          rssBlocks.push(
-            `SOURCE_ROOT_URL: ${source.url}\nACCESS: FAILED\nERROR: ${source.error||"RSS 읽기 실패"}`
-          );
-        }
+    const fetched=await invokeSourceEdge(rssUrls);
+    for(const source of fetched.sources||[]){
+      if(source.status!=="ok" || !(source.items||[]).length){
+        setSourceRuntimeStatus(source.url,"error","읽기 실패");
+        continue;
       }
-    }catch(error){
-      console.error("RSS 직접 읽기 실패",error);
-      for(const url of rssUrls){
-        setSourceRuntimeStatus(url,"error","읽기 실패");
-        rssBlocks.push(`SOURCE_ROOT_URL: ${url}\nACCESS: FAILED\nERROR: ${error.message||error}`);
-      }
+
+      setSourceRuntimeStatus(source.url,"ok",`✓ ${source.item_count||0}건`);
+      rssCitations.push(source.url);
+
+      (source.items||[]).slice(0,30).forEach(item=>{
+        const itemUrl=validHttpUrl(item.link||"")?item.link:source.url;
+        if(validHttpUrl(itemUrl))rssCitations.push(itemUrl);
+        allItems.push({
+          candidateId:`rss_${allItems.length+1}`,
+          sourceLabel:chooseSourceLabel(source,item),
+          sourceRootUrl:source.url,
+          itemUrl,
+          publishedAt:normalizeSourceDate(item.published),
+          rawPublishedAt:String(item.published||""),
+          rawTitle:String(item.title||"").trim(),
+          rawSummary:String(item.summary||"").trim(),
+          author:String(item.author||"").trim(),
+          feedTitle:String(source.feed_title||"").trim()
+        });
+      });
     }
     renderSourceList();
 
-    // RSS가 등록되어 있는데 실제로 한 건도 읽지 못했다면 일반웹으로 조용히 대체하지 않는다.
-    if(rssUrls.length && (rssSuccessCount===0 || rssItemCount===0)){
+    if(!allItems.length){
       throw new Error(
-        "등록한 RSS 소스를 실제로 읽지 못했습니다. 일반웹 검색으로 대체하지 않고 중단했습니다. " +
-        "참고소스 창의 '소스 연결 테스트'에서 RSS 응답을 먼저 확인하세요."
+        "등록한 RSS에서 게시물 항목을 읽지 못했습니다. 일반웹으로 대체하지 않고 중단합니다. " +
+        "'소스 연결 테스트'에서 피드 항목이 표시되는지 확인하세요."
       );
     }
   }
 
-  const days=weekDays();
-  const start=dateKey(days[0]),end=dateKey(days[6]);
-  const sourceLines=contextUrls.map((url,i)=>
-    `${i+1}. label_hint="${guessSourceLabel(url)}" | type="${sourceType(url)}" | ${url}`
-  ).join("\n");
-
-  const rssEvidence=rssBlocks.filter(Boolean).join("\n\n================ RSS SOURCE ================\n\n");
-
-  const prompt=`당신은 사용자 지정 참고소스 전담 분석기다.
-이 단계에서는 Google Search를 사용하지 않는다.
-
-[선택 주간]
-${start} ~ ${end}
-
-[분야]
-${currentChannel().label}
-
-${rssEvidence?`[서버가 직접 읽고 파싱한 RSS 원문]
-아래 RSS 내용은 이미 서버에서 직접 가져온 실제 피드 데이터다. URL Context로 다시 가져오려 하지 말고 이 내용을 근거로 분석한다.
-
-${rssEvidence}`:""}
-
-${sourceLines?`[URL Context로 읽을 일반 참고소스]
-${sourceLines}`:""}
-
-규칙:
-1. 서버가 직접 읽은 RSS는 ITEM별 제목·게시일·작성자·원문 링크·본문/설명을 실제 소스 근거로 사용한다.
-2. 일반 URL은 URL Context로 실제 접근 가능한 경우에만 사용한다.
-3. Instagram/Threads 프로필처럼 접근 제한 때문에 읽을 수 없다면 추측하지 않는다.
-4. 선택 주간에 게시되었거나 선택 주간 사건·일정을 직접 다루는 항목을 우선 추출한다.
-5. 각 후보마다 반드시 다음 형식을 사용한다.
-
-SOURCE_LABEL: 사람이 알아볼 수 있는 출처명 또는 계정 핸들. RSS의 FEED_TITLE/AUTHOR 정보가 있으면 적극 활용한다.
-SOURCE_ROOT_URL: 사용자가 등록한 원래 URL
-ITEM_URL: 실제 개별 게시물 링크가 있으면 그 링크, 없으면 SOURCE_ROOT_URL
-PUBLISHED_AT: 확인된 게시일 또는 미상
-EVENT_DATE: 실제 사건일/일정일 또는 미상
-TITLE: 핵심 주제
-SUMMARY: 해당 소스가 실제로 말한 핵심 내용
-ACCESS: OK 또는 FAILED
-
-6. 소스에 없는 사실은 이 단계에서 외부 지식으로 보충하지 않는다.
-7. 접근 가능한 소스에서 이번 주 관련 후보가 없으면 "관련 후보 없음"이라고 적는다.
-8. RSS 원문이 제공된 경우 반드시 최소한 ITEM들을 검토하고, 단순히 일반웹 지식으로 대체하지 않는다.`;
-
-  let result;
-
+  // 일반 URL은 URL Context로 읽되 날짜 때문에 제외하지 않는다.
   if(contextUrls.length){
     contextUrls.forEach(url=>setSourceRuntimeStatus(url,"pending","URL 읽는 중"));
     renderSourceList();
 
-    result=await postInteraction({
+    const contextResult=await postInteraction({
       model:state.settings.analysisModel,
-      input:prompt,
+      input:`다음 사용자 지정 URL을 직접 읽고, 유튜브 콘텐츠 후보로 쓸 수 있는 핵심 항목을 URL별 최대 5개 추출하라.
+선택 주간 날짜와 맞지 않는다는 이유로 제외하지 않는다. 원문에 없는 사실을 추가하지 않는다.
+
+${contextUrls.map((url,i)=>`${i+1}. ${url}`).join("\n")}
+
+형식:
+SOURCE_ROOT_URL:
+SOURCE_LABEL:
+ITEM_URL:
+PUBLISHED_AT:
+TITLE:
+SUMMARY:
+ACCESS: OK 또는 FAILED`,
       tools:[{type:"url_context"}]
     });
 
-    const cited=new Set(extractCitations(result));
+    const out=extractLastText(contextResult)||"";
+    contextEvidence.push(out);
+    const cited=new Set(extractCitations(contextResult));
     for(const url of contextUrls){
-      // URL Context 응답 구조가 URL별 status를 항상 쉽게 노출하지 않으므로
-      // citation 또는 응답 내 URL 존재를 성공의 보수적 신호로 사용한다.
-      const used=cited.has(url)||(extractLastText(result)||"").includes(url);
+      const used=cited.has(url)||out.includes(url);
       setSourceRuntimeStatus(url,used?"ok":"error",used?"✓ 참조됨":"참조 확인 안됨");
     }
     renderSourceList();
-  }else{
-    result=await postInteraction({
-      model:state.settings.analysisModel,
-      input:prompt
-    });
   }
 
-  const output=extractLastText(result)||"";
+  let selectedItems=[];
+  let selectionText="";
+
+  // 실제 RSS 항목은 candidateId로 고정하고 AI는 '어떤 것을 쓸지'만 고른다.
+  if(allItems.length){
+    setProgress("2단계 · 참고소스 주제 선별","원문 날짜와 상관없이 유튜브 소재로 가치 있는 항목을 고릅니다.");
+
+    const candidateText=allItems.slice(0,40).map(x=>[
+      `ID: ${x.candidateId}`,
+      `SOURCE: ${x.sourceLabel}`,
+      `PUBLISHED: ${x.rawPublishedAt||x.publishedAt||"미상"}`,
+      `TITLE: ${x.rawTitle||"(제목 없음)"}`,
+      `SUMMARY: ${(x.rawSummary||"").slice(0,1800)}`,
+      `URL: ${x.itemUrl}`
+    ].join("\n")).join("\n\n---\n\n");
+
+    const schema={
+      type:"object",
+      properties:{
+        selected:{
+          type:"array",
+          items:{
+            type:"object",
+            properties:{
+              candidateId:{type:"string"},
+              contentAngle:{type:"string"},
+              usefulnessReason:{type:"string"}
+            },
+            required:["candidateId","contentAngle","usefulnessReason"]
+          }
+        }
+      },
+      required:["selected"]
+    };
+
+    const selectionResult=await postInteraction({
+      model:state.settings.analysisModel,
+      input:`당신은 AI·테크 유튜브 콘텐츠 에디터다.
+
+[현재 메뉴]
+${currentChannel().label}
+
+[사용자 요청]
+${userPrompt}
+
+아래는 사용자가 직접 지정한 RSS에서 실제로 수집한 게시물이다.
+원문 게시일이 선택 주간과 맞지 않아도 버리지 않는다.
+목적은 달력의 사건 날짜를 맞추는 것이 아니라, 사용자가 유튜브로 만들 가치가 있는 주제를 발굴하는 것이다.
+
+가장 쓸모 있는 항목을 최대 8개 고른다.
+- 새로움
+- 실전 활용성
+- 시청자가 궁금해할 변화
+- 비교·검증·튜토리얼 확장성
+을 우선한다.
+candidateId는 원문 그대로 사용한다. 새 항목을 만들지 않는다.
+
+[실제 RSS 항목]
+${candidateText}`,
+      response_format:{type:"text",mime_type:"application/json",schema}
+    });
+
+    const parsed=JSON.parse(extractLastText(selectionResult)||'{"selected":[]}');
+    const byId=new Map(allItems.map(x=>[x.candidateId,x]));
+    selectedItems=(parsed.selected||[])
+      .map(sel=>byId.has(sel.candidateId)?{
+        ...byId.get(sel.candidateId),
+        contentAngle:String(sel.contentAngle||"").trim(),
+        usefulnessReason:String(sel.usefulnessReason||"").trim()
+      }:null)
+      .filter(Boolean)
+      .slice(0,8);
+
+    selectionText=selectedItems.map(x=>[
+      `CANDIDATE_ID: ${x.candidateId}`,
+      `SOURCE_LABEL: ${x.sourceLabel}`,
+      `SOURCE_ROOT_URL: ${x.sourceRootUrl}`,
+      `ITEM_URL: ${x.itemUrl}`,
+      `PUBLISHED_AT: ${x.publishedAt||x.rawPublishedAt||"미상"}`,
+      `SOURCE_TITLE: ${x.rawTitle}`,
+      `SOURCE_SUMMARY: ${x.rawSummary}`,
+      `CONTENT_ANGLE: ${x.contentAngle}`,
+      `USEFULNESS: ${x.usefulnessReason}`,
+      `ACCESS: OK`
+    ].join("\n")).join("\n\n");
+  }
+
+  const combinedText=[selectionText,...contextEvidence].filter(Boolean)
+    .join("\n\n================ SOURCE ================\n\n");
+
   return {
-    text:output,
-    rssSuccessCount,
-    rssItemCount,
-    citations:[
-      ...rssCitations,
-      ...extractCitations(result),
-      ...extractHttpUrls(output)
-    ].filter(validHttpUrl)
+    text:combinedText,
+    citations:[...new Set([...rssCitations,...extractHttpUrls(combinedText)])].filter(validHttpUrl),
+    selectedItems,
+    allItems
   };
 }
 
@@ -2909,17 +2991,122 @@ async function applyStudyPlan(cards){
 }
 
 /* ==========================================================
+   14B. SOURCE ITEMS → CONTENT CARDS
+========================================================== */
+async function sourceItemsToCards(selectedItems,userPrompt=""){
+  if(!Array.isArray(selectedItems)||!selectedItems.length)return [];
+
+  setProgress("3단계 · 참고소스 사실 검증","선택한 원문 주제를 일반 웹에서 교차검증하되 원문을 카드의 중심으로 유지합니다.");
+  document.getElementById("researchStatusPill").textContent="소스 검증";
+
+  const evidence=selectedItems.map(x=>[
+    `CANDIDATE_ID: ${x.candidateId}`,
+    `SOURCE_LABEL: ${x.sourceLabel}`,
+    `PUBLISHED_AT: ${x.publishedAt||x.rawPublishedAt||"미상"}`,
+    `SOURCE_TITLE: ${x.rawTitle}`,
+    `SOURCE_SUMMARY: ${x.rawSummary}`,
+    `CONTENT_ANGLE: ${x.contentAngle}`,
+    `SOURCE_URL: ${x.itemUrl}`
+  ].join("\n")).join("\n\n---\n\n");
+
+  const schema={
+    type:"object",
+    properties:{
+      cards:{
+        type:"array",
+        items:{
+          type:"object",
+          properties:{
+            candidateId:{type:"string"},
+            impact:{type:"string",enum:["high","medium","low"]},
+            title:{type:"string"},
+            summary:{type:"string"},
+            whyImportant:{type:"string"},
+            outlook:{type:"string"},
+            watchpoints:{type:"array",items:{type:"string"}},
+            verificationUrls:{type:"array",items:{type:"string"}}
+          },
+          required:["candidateId","impact","title","summary","whyImportant","outlook","watchpoints","verificationUrls"]
+        }
+      }
+    },
+    required:["cards"]
+  };
+
+  const result=await postInteraction({
+    model:state.settings.analysisModel,
+    input:`당신은 유튜브 콘텐츠 후보를 검증하는 팩트체커 겸 에디터다.
+
+[사용자 요청]
+${userPrompt}
+
+[사용자 지정 참고소스에서 실제로 뽑은 후보]
+${evidence}
+
+규칙:
+1. 카드의 주제와 중심 내용은 반드시 SOURCE_TITLE/SOURCE_SUMMARY에서 출발한다.
+2. Google Search는 사실 확인·공식 발표·추가 맥락 보완에만 사용한다.
+3. 검색 결과의 다른 유명 뉴스를 새 주제로 대체하지 않는다.
+4. candidateId를 절대 바꾸지 않는다.
+5. summary 첫 문장은 참고소스에서 확인된 핵심을 요약한다.
+6. 원문 주장과 웹 검증 결과가 다르면 차이를 명확하게 쓴다.
+7. 원문 게시일이 선택 주간과 달라도 포함한다. 날짜 필터링 금지.
+8. verificationUrls에는 웹 검증에 사용한 실제 URL만 넣는다.
+9. watchpoints에는 유튜브에서 직접 검증·비교·시연할 포인트를 포함해도 된다.`,
+    tools:[{type:"google_search"}],
+    response_format:{type:"text",mime_type:"application/json",schema}
+  });
+
+  const parsed=JSON.parse(extractLastText(result)||'{"cards":[]}');
+  const byId=new Map(selectedItems.map(x=>[x.candidateId,x]));
+
+  const cards=(parsed.cards||[]).map(x=>{
+    const src=byId.get(x.candidateId);
+    if(!src)return null;
+    const itemUrl=validHttpUrl(src.itemUrl||"")?src.itemUrl:src.sourceRootUrl;
+    const verification=(x.verificationUrls||[]).filter(validHttpUrl);
+
+    return {
+      id:crypto.randomUUID(),
+      dateKey:"",
+      timeLabel:"",
+      status:"reported",
+      impact:["high","medium","low"].includes(x.impact)?x.impact:"medium",
+      title:x.title||src.rawTitle||"참고소스 주제",
+      summary:x.summary||src.rawSummary||"",
+      youtubeScript:"",
+      deepAnalysis:"",
+      whyImportant:x.whyImportant||src.usefulnessReason||"",
+      outlook:x.outlook||"",
+      watchpoints:Array.isArray(x.watchpoints)?x.watchpoints:[],
+      sourcePublishedAt:src.publishedAt||src.rawPublishedAt||"",
+      temporalBasis:"",
+      primarySourceLabel:src.sourceLabel||"참고소스",
+      primarySourceUrl:itemUrl||"",
+      primarySourceKind:"reference",
+      sourceUrls:[...new Set([itemUrl,src.sourceRootUrl,...verification].filter(validHttpUrl))]
+    };
+  }).filter(Boolean);
+
+  return distributeReferenceCards(cards);
+}
+
+/* ==========================================================
    15. STRUCTURED CARD OUTPUT
 ========================================================== */
-async function researchToCards(report,citationUrls,prioritySourceSummary=""){
+async function researchToCards(report,citationUrls,prioritySourceSummary="",webOnly=false){
   setProgress("뉴스 카드 구성 중",`${state.settings.analysisModel}이 사건 날짜와 게시 날짜를 분리해 주간 카드로 재구성합니다.`);
 
   const validDates=weekDays().map(dateKey);
-  const sourcePool=[...currentSources(),...citationUrls,...extractHttpUrls(prioritySourceSummary)];
+  const sourcePool=webOnly
+    ? [...citationUrls]
+    : [...currentSources(),...citationUrls,...extractHttpUrls(prioritySourceSummary)];
   const uniqueSources=[...new Set(sourcePool)].filter(validHttpUrl).slice(0,80);
 
   const prompt=`
-다음은 빠른 Google Search 기반 조사 결과다. 이를 AI Weekly Intelligence 카드로 변환한다.
+${webOnly
+  ?"다음은 사용자 지정 참고소스와 별도로 수집한 일반 웹 보완 조사 결과다. 일반웹 카드만 만든다."
+  :"다음은 빠른 Google Search 기반 조사 결과다. 이를 AI Weekly Intelligence 카드로 변환한다."}
 
 [선택 주간 날짜]
 ${validDates.join(", ")}
@@ -3034,9 +3221,9 @@ ${report}
       watchpoints:Array.isArray(x.watchpoints)?x.watchpoints:[],
       sourcePublishedAt:x.sourcePublishedAt||"",
       temporalBasis:x.temporalBasis||"",
-      primarySourceLabel:(x.primarySourceLabel||"일반웹").trim()||"일반웹",
+      primarySourceLabel:webOnly?"일반웹":((x.primarySourceLabel||"일반웹").trim()||"일반웹"),
       primarySourceUrl:validHttpUrl(x.primarySourceUrl||"")?x.primarySourceUrl:"",
-      primarySourceKind:x.primarySourceKind==="reference"?"reference":"web",
+      primarySourceKind:webOnly?"web":(x.primarySourceKind==="reference"?"reference":"web"),
       sourceUrls:Array.isArray(x.sourceUrls)?x.sourceUrls.filter(validHttpUrl):[]
     }));
 }
@@ -3063,7 +3250,7 @@ document.getElementById("generateBtn").onclick=async()=>{
     study ? "학습 계획 생성 중" : (existingBefore?"이번 주 업데이트 중":"빠른 조사 중")
   );
   document.getElementById("progressBox").classList.add("show");
-  document.getElementById("researchStatusPill").textContent=study?"문서 준비":"Google Search";
+  document.getElementById("researchStatusPill").textContent=study?"문서 준비":(currentSources().length?"참고소스 준비":"Google Search");
   document.getElementById("researchElapsedPill").textContent="0초";
   setAiStatus("");
 
@@ -3092,28 +3279,41 @@ document.getElementById("generateBtn").onclick=async()=>{
       console.warn("YouTube 분석 실패",e);
     }
 
-    let prioritySource={text:"",citations:[]};
-    try{
-      if(currentSources().some(x=>!isYouTubeVideo(x)))prioritySource=await analyzePrioritySources();
-    }catch(e){
-      console.warn("참고소스 우선 분석 실패",e);
-      prioritySource={text:`참고소스 선행 분석 단계 오류: ${e.message||e}`,citations:[]};
+    let prioritySource={text:"",citations:[],selectedItems:[],allItems:[]};
+    if(currentSources().some(x=>!isYouTubeVideo(x))){
+      prioritySource=await analyzePrioritySources(request);
     }
 
-    const prompt=buildResearchPrompt(request,youtubeSummary,prioritySource.text);
+    // 사용자 참고소스 카드는 별도 레인에서 먼저 생성한다.
+    const sourceCards=await sourceItemsToCards(prioritySource.selectedItems,request);
+
+    // 일반 웹은 소스 카드와 중복되지 않는 보완 이슈만 찾는다.
+    const webRequest=sourceCards.length
+      ? `${request}\n\n사용자 참고소스 카드는 이미 별도로 생성했다. 이 단계에서는 중복되지 않는 일반웹의 추가 핵심 이슈만 조사하라.`
+      : request;
+
+    const prompt=buildResearchPrompt(webRequest,youtubeSummary,"");
     const researchResult=await runSearchFallback(prompt);
     const report=extractLastText(researchResult);
     if(!report)throw new Error("빠른 웹 조사 결과가 비어 있습니다.");
 
-    setProgress("3단계 · 카드 구성","참고소스 발견 이슈와 일반웹 이슈를 구분해 날짜별 카드로 정리합니다.");
+    setProgress("4단계 · 카드 구성","참고소스 카드와 일반웹 보완 카드를 함께 정리합니다.");
     document.getElementById("researchStatusPill").textContent="카드 구성";
 
-    const cards=await researchToCards(
+    let webCards=await researchToCards(
       report,
-      [...extractCitations(researchResult),...prioritySource.citations],
-      prioritySource.text
+      extractCitations(researchResult),
+      "",
+      true
     );
+
+    if(sourceCards.length)webCards=webCards.slice(0,5);
+    const cards=[...sourceCards,...webCards];
     if(!cards.length)throw new Error("선택 주간에 새로 반영할 핵심 이슈가 발견되지 않았습니다.");
+
+    if(!cards.length)throw new Error("생성할 카드가 없습니다.");
+    const sourceCount=cards.filter(c=>c.primarySourceKind==="reference").length;
+    const webCount=cards.length-sourceCount;
 
     const result=mergeBriefCards(cards);
     saveState();
@@ -3139,7 +3339,7 @@ document.getElementById("generateBtn").onclick=async()=>{
     showToast(
       existingBefore
         ? `업데이트 완료 · 새 카드 ${result.added}개 · 갱신 ${result.updated}개${compactDays?` · ${compactDays}`:""}`
-        : `${result.added}개의 핵심 카드를 생성했습니다.${compactDays?` · ${compactDays}`:""}`
+        : `${result.added}개의 핵심 카드를 생성했습니다. · 참고소스 ${sourceCount}개 · 일반웹 ${webCount}개${compactDays?` · ${compactDays}`:""}`
     );
   }catch(error){
     console.error(error);
