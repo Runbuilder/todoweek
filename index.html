@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.5</title>
+<title>AI Weekly Intelligence V7.6</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,7 +410,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.5 source-first attribution */
+/* V7.6 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
@@ -436,7 +436,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .source-test-result.error{border-color:#743746;background:#2a151c;color:#ff9aaa}
 
 
-/* V7.5 board visibility */
+/* V7.6 board visibility */
 .board-summary{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:10px
 }
@@ -486,8 +486,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   <div class="brand">
     <div class="brand-logo">W</div>
     <div>
-      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.5</span></div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.5</div>
+      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.6</span></div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.6</div>
     </div>
   </div>
 
@@ -1938,11 +1938,15 @@ function getSourceRuntimeStatus(url){
   return sourceRuntimeStatus[url]||null;
 }
 
-async function invokeSourceEdge(urls){
+async function invokeSourceEdge(urls=[],channelId=""){
   if(!supabaseClient||!supabaseUser)throw new Error("Google 로그인이 필요합니다.");
 
   const {data:{session},error}=await supabaseClient.auth.getSession();
   if(error||!session)throw new Error("로그인 세션이 만료되었습니다.");
+
+  const payload={};
+  if(Array.isArray(urls)&&urls.length)payload.urls=urls;
+  if(channelId)payload.channel_id=channelId;
 
   const response=await fetch(`${SUPABASE_URL}/functions/v1/${SOURCE_EDGE_FUNCTION}`,{
     method:"POST",
@@ -1951,7 +1955,7 @@ async function invokeSourceEdge(urls){
       "apikey":SUPABASE_PUBLISHABLE_KEY,
       "Authorization":`Bearer ${session.access_token}`
     },
-    body:JSON.stringify({urls})
+    body:JSON.stringify(payload)
   });
 
   const raw=await response.text();
@@ -2018,38 +2022,32 @@ document.getElementById("sourceInput").addEventListener("keydown",e=>{
 
 async function testCurrentSources(){
   const resultEl=document.getElementById("sourceTestResult");
-  const urls=currentSources();
-
   resultEl.className="source-test-result show";
-  if(!urls.length){
-    resultEl.classList.add("error");
-    resultEl.textContent="등록된 참고소스가 없습니다.";
-    return;
-  }
-
-  const feeds=urls.filter(isDirectFeedUrl);
-  if(!feeds.length){
-    resultEl.classList.add("error");
-    resultEl.textContent="현재 연결 테스트는 RSS/XML 피드를 우선 진단합니다. RSS.app 피드 또는 공개 XML 피드를 등록하세요.";
-    return;
-  }
-
-  resultEl.textContent="RSS 서버 연결 테스트 중...";
-  feeds.forEach(url=>setSourceRuntimeStatus(url,"pending","테스트 중"));
-  renderSourceList();
+  resultEl.textContent="Supabase에 저장된 참고소스를 서버에서 직접 확인하고 있습니다...";
 
   try{
-    const data=await invokeSourceEdge(feeds);
-    const lines=[];
+    const data=await invokeSourceEdge([],state.channel);
+    const registered=data.registered_urls||[];
+    const sources=data.sources||[];
 
-    for(const source of data.sources||[]){
+    if(!registered.length){
+      resultEl.className="source-test-result show error";
+      resultEl.textContent="현재 메뉴의 Supabase 참고소스가 비어 있습니다.";
+      return;
+    }
+
+    const lines=[
+      `서버 등록 소스: ${registered.length}개`,
+      ...registered.map((u,i)=>`${i+1}. ${u}`),
+      ""
+    ];
+
+    for(const source of sources){
       if(source.status==="ok"){
         setSourceRuntimeStatus(source.url,"ok",`✓ ${source.item_count||0}건`);
-        lines.push(`✓ ${source.feed_title||"RSS 피드"}`);
+        lines.push(`✓ ${source.feed_title||"RSS 피드"} · ${source.item_count||0}건`);
         lines.push(`URL: ${source.url}`);
-        lines.push(`항목 수: ${source.item_count||0}`);
-        const items=(source.items||[]).slice(0,5);
-        for(const [i,item] of items.entries()){
+        for(const [i,item] of (source.items||[]).slice(0,5).entries()){
           lines.push(`${i+1}. ${item.title||"(제목 없음)"}${item.published?` · ${item.published}`:""}`);
         }
       }else{
@@ -2060,13 +2058,11 @@ async function testCurrentSources(){
       lines.push("");
     }
 
-    const success=(data.sources||[]).some(x=>x.status==="ok" && (x.item_count||0)>0);
-    resultEl.className=`source-test-result show ${success?"ok":"error"}`;
-    resultEl.textContent=lines.join("\n").trim()||"소스 응답이 비어 있습니다.";
+    const ok=sources.some(s=>s.status==="ok"&&(s.item_count||0)>0);
+    resultEl.className=`source-test-result show ${ok?"ok":"error"}`;
+    resultEl.textContent=lines.join("\n").trim();
     renderSourceList();
   }catch(error){
-    feeds.forEach(url=>setSourceRuntimeStatus(url,"error","연결 실패"));
-    renderSourceList();
     resultEl.className="source-test-result show error";
     resultEl.textContent=`소스 연결 실패\n${error.message||error}`;
   }
@@ -2520,11 +2516,17 @@ L. 중요도가 낮은 기사, 반복 기사, 단순 홍보성 글은 제외한�
    10B. USER SOURCE-FIRST ANALYSIS
 ========================================================== */
 async function analyzePrioritySources(userPrompt=""){
-  const urls=currentSources().filter(x=>!isYouTubeVideo(x)).slice(0,20);
-  if(!urls.length)return {text:"",citations:[],selectedItems:[],allItems:[]};
+  setProgress("1단계 · 참고소스 서버 확인","Supabase에 저장된 현재 메뉴의 참고소스를 서버에서 직접 불러옵니다.");
+  document.getElementById("researchStatusPill").textContent="참고소스 확인";
 
-  setProgress("1단계 · 참고소스 직접 수집",`${urls.length}개 참고소스에서 콘텐츠 후보를 직접 읽습니다.`);
-  document.getElementById("researchStatusPill").textContent="참고소스 수집";
+  // 중요: 브라우저 local state에 의존하지 않는다.
+  // 현재 로그인 사용자의 awi_channels.source_urls를 Edge Function이 직접 읽는다.
+  const fetched=await invokeSourceEdge([],state.channel);
+  const urls=(fetched.registered_urls||[]).filter(validHttpUrl).slice(0,20);
+
+  if(!urls.length){
+    return {text:"",citations:[],selectedItems:[],allItems:[],registeredUrls:[]};
+  }
 
   const rssUrls=urls.filter(isDirectFeedUrl);
   const contextUrls=urls.filter(url=>!isDirectFeedUrl(url));
@@ -2532,57 +2534,57 @@ async function analyzePrioritySources(userPrompt=""){
   const allItems=[];
   const contextEvidence=[];
 
-  // RSS/XML은 '선택 주간과 날짜가 맞는가'로 걸러내지 않는다.
-  // 목적은 뉴스 달력의 사실 날짜가 아니라 유튜브 콘텐츠 후보 발굴이다.
-  if(rssUrls.length){
-    rssUrls.forEach(url=>setSourceRuntimeStatus(url,"pending","RSS 읽는 중"));
-    renderSourceList();
+  setProgress(
+    "1단계 · 참고소스 직접 수집",
+    `서버 등록 ${urls.length}개 · RSS ${rssUrls.length}개 · 일반 URL ${contextUrls.length}개를 분석합니다.`
+  );
+  document.getElementById("researchStatusPill").textContent=`참고소스 ${urls.length}개`;
 
-    const fetched=await invokeSourceEdge(rssUrls);
-    for(const source of fetched.sources||[]){
-      if(source.status!=="ok" || !(source.items||[]).length){
-        setSourceRuntimeStatus(source.url,"error","읽기 실패");
-        continue;
-      }
+  // 서버가 이미 RSS를 직접 다운로드·파싱해서 sources에 담아 반환한다.
+  for(const source of fetched.sources||[]){
+    if(source.status!=="ok" || !(source.items||[]).length){
+      setSourceRuntimeStatus(source.url,"error","읽기 실패");
+      continue;
+    }
 
-      setSourceRuntimeStatus(source.url,"ok",`✓ ${source.item_count||0}건`);
-      rssCitations.push(source.url);
+    setSourceRuntimeStatus(source.url,"ok",`✓ ${source.item_count||0}건`);
+    rssCitations.push(source.url);
 
-      (source.items||[]).slice(0,30).forEach(item=>{
-        const itemUrl=validHttpUrl(item.link||"")?item.link:source.url;
-        if(validHttpUrl(itemUrl))rssCitations.push(itemUrl);
-        allItems.push({
-          candidateId:`rss_${allItems.length+1}`,
-          sourceLabel:chooseSourceLabel(source,item),
-          sourceRootUrl:source.url,
-          itemUrl,
-          publishedAt:normalizeSourceDate(item.published),
-          rawPublishedAt:String(item.published||""),
-          rawTitle:String(item.title||"").trim(),
-          rawSummary:String(item.summary||"").trim(),
-          author:String(item.author||"").trim(),
-          feedTitle:String(source.feed_title||"").trim()
-        });
+    (source.items||[]).slice(0,30).forEach(item=>{
+      const itemUrl=validHttpUrl(item.link||"")?item.link:source.url;
+      if(validHttpUrl(itemUrl))rssCitations.push(itemUrl);
+
+      allItems.push({
+        candidateId:`rss_${allItems.length+1}`,
+        sourceLabel:chooseSourceLabel(source,item),
+        sourceRootUrl:source.url,
+        itemUrl,
+        publishedAt:normalizeSourceDate(item.published),
+        rawPublishedAt:String(item.published||""),
+        rawTitle:String(item.title||"").trim(),
+        rawSummary:String(item.summary||"").trim(),
+        author:String(item.author||"").trim(),
+        feedTitle:String(source.feed_title||"").trim()
       });
-    }
-    renderSourceList();
+    });
+  }
+  renderSourceList();
 
-    if(!allItems.length){
-      throw new Error(
-        "등록한 RSS에서 게시물 항목을 읽지 못했습니다. 일반웹으로 대체하지 않고 중단합니다. " +
-        "'소스 연결 테스트'에서 피드 항목이 표시되는지 확인하세요."
-      );
-    }
+  if(rssUrls.length && !allItems.length){
+    throw new Error(
+      `Supabase에는 RSS ${rssUrls.length}개가 등록되어 있지만 게시물 항목을 읽지 못했습니다. `+
+      "일반웹으로 대체하지 않고 중단합니다. '소스 연결 테스트'에서 서버 응답을 확인하세요."
+    );
   }
 
-  // 일반 URL은 URL Context로 읽되 날짜 때문에 제외하지 않는다.
+  // RSS가 아닌 일반 URL은 URL Context를 사용하되 날짜로 배제하지 않는다.
   if(contextUrls.length){
     contextUrls.forEach(url=>setSourceRuntimeStatus(url,"pending","URL 읽는 중"));
     renderSourceList();
 
     const contextResult=await postInteraction({
       model:state.settings.analysisModel,
-      input:`다음 사용자 지정 URL을 직접 읽고, 유튜브 콘텐츠 후보로 쓸 수 있는 핵심 항목을 URL별 최대 5개 추출하라.
+      input:`다음 사용자 지정 URL을 직접 읽고 유튜브 콘텐츠 후보로 쓸 수 있는 핵심 항목을 URL별 최대 5개 추출하라.
 선택 주간 날짜와 맞지 않는다는 이유로 제외하지 않는다. 원문에 없는 사실을 추가하지 않는다.
 
 ${contextUrls.map((url,i)=>`${i+1}. ${url}`).join("\n")}
@@ -2611,9 +2613,11 @@ ACCESS: OK 또는 FAILED`,
   let selectedItems=[];
   let selectionText="";
 
-  // 실제 RSS 항목은 candidateId로 고정하고 AI는 '어떤 것을 쓸지'만 고른다.
   if(allItems.length){
-    setProgress("2단계 · 참고소스 주제 선별","원문 날짜와 상관없이 유튜브 소재로 가치 있는 항목을 고릅니다.");
+    setProgress(
+      "2단계 · 참고소스 주제 선별",
+      `RSS에서 실제 ${allItems.length}개 항목을 읽었습니다. 날짜와 무관하게 유튜브 소재를 고릅니다.`
+    );
 
     const candidateText=allItems.slice(0,40).map(x=>[
       `ID: ${x.candidateId}`,
@@ -2653,9 +2657,9 @@ ${currentChannel().label}
 [사용자 요청]
 ${userPrompt}
 
-아래는 사용자가 직접 지정한 RSS에서 실제로 수집한 게시물이다.
+아래는 사용자가 직접 지정한 RSS에서 서버가 실제로 읽어 온 게시물이다.
 원문 게시일이 선택 주간과 맞지 않아도 버리지 않는다.
-목적은 달력의 사건 날짜를 맞추는 것이 아니라, 사용자가 유튜브로 만들 가치가 있는 주제를 발굴하는 것이다.
+목적은 달력의 사건 날짜를 맞추는 것이 아니라 사용자가 유튜브로 만들 가치가 있는 주제를 발굴하는 것이다.
 
 가장 쓸모 있는 항목을 최대 8개 고른다.
 - 새로움
@@ -2681,6 +2685,15 @@ ${candidateText}`,
       .filter(Boolean)
       .slice(0,8);
 
+    // Gemini가 유효 ID를 하나도 선택하지 못한 경우에도 실제 RSS 상위 항목을 보존한다.
+    if(!selectedItems.length){
+      selectedItems=allItems.slice(0,8).map(x=>({
+        ...x,
+        contentAngle:x.rawTitle,
+        usefulnessReason:"사용자 지정 참고소스에서 직접 수집된 콘텐츠 후보"
+      }));
+    }
+
     selectionText=selectedItems.map(x=>[
       `CANDIDATE_ID: ${x.candidateId}`,
       `SOURCE_LABEL: ${x.sourceLabel}`,
@@ -2702,7 +2715,8 @@ ${candidateText}`,
     text:combinedText,
     citations:[...new Set([...rssCitations,...extractHttpUrls(combinedText)])].filter(validHttpUrl),
     selectedItems,
-    allItems
+    allItems,
+    registeredUrls:urls
   };
 }
 
@@ -3250,7 +3264,7 @@ document.getElementById("generateBtn").onclick=async()=>{
     study ? "학습 계획 생성 중" : (existingBefore?"이번 주 업데이트 중":"빠른 조사 중")
   );
   document.getElementById("progressBox").classList.add("show");
-  document.getElementById("researchStatusPill").textContent=study?"문서 준비":(currentSources().length?"참고소스 준비":"Google Search");
+  document.getElementById("researchStatusPill").textContent=study?"문서 준비":"소스 확인";
   document.getElementById("researchElapsedPill").textContent="0초";
   setAiStatus("");
 
@@ -3279,10 +3293,8 @@ document.getElementById("generateBtn").onclick=async()=>{
       console.warn("YouTube 분석 실패",e);
     }
 
-    let prioritySource={text:"",citations:[],selectedItems:[],allItems:[]};
-    if(currentSources().some(x=>!isYouTubeVideo(x))){
-      prioritySource=await analyzePrioritySources(request);
-    }
+    // 브라우저 local state가 아니라 Supabase의 현재 메뉴 source_urls를 서버가 직접 조회한다.
+    const prioritySource=await analyzePrioritySources(request);
 
     // 사용자 참고소스 카드는 별도 레인에서 먼저 생성한다.
     const sourceCards=await sourceItemsToCards(prioritySource.selectedItems,request);
@@ -3339,7 +3351,7 @@ document.getElementById("generateBtn").onclick=async()=>{
     showToast(
       existingBefore
         ? `업데이트 완료 · 새 카드 ${result.added}개 · 갱신 ${result.updated}개${compactDays?` · ${compactDays}`:""}`
-        : `${result.added}개의 핵심 카드를 생성했습니다. · 참고소스 ${sourceCount}개 · 일반웹 ${webCount}개${compactDays?` · ${compactDays}`:""}`
+        : `${result.added}개의 핵심 카드를 생성했습니다. · 서버소스 ${(prioritySource.registeredUrls||[]).length}개 · 참고소스 ${sourceCount}개 · 일반웹 ${webCount}개${compactDays?` · ${compactDays}`:""}`
     );
   }catch(error){
     console.error(error);
