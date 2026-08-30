@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.2</title>
+<title>AI Weekly Intelligence V7.3</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,7 +410,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.2 source-first attribution */
+/* V7.3 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
@@ -420,6 +420,20 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .source-read-status.ok{border-color:#256247;background:#14362b;color:#75dcae}
 .source-read-status.error{border-color:#6c3443;background:#3a1d27;color:#ff90a2}
 .source-read-status.pending{border-color:#6b5528;background:#3a2e18;color:#ffd078}
+
+
+.app-version{
+  margin-left:7px;padding:2px 6px;border-radius:999px;border:1px solid #344966;
+  color:#8fa4c2;background:#111d31;font-size:8px;font-weight:900;vertical-align:middle
+}
+.source-test-result{
+  display:none;margin-top:8px;padding:10px;border-radius:9px;border:1px solid #344762;
+  background:#0f192a;color:#a7b5ca;font-size:9px;line-height:1.55;white-space:pre-wrap;
+  max-height:220px;overflow:auto
+}
+.source-test-result.show{display:block}
+.source-test-result.ok{border-color:#2b7052;background:#0f261f;color:#8ee0b8}
+.source-test-result.error{border-color:#743746;background:#2a151c;color:#ff9aaa}
 
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -452,8 +466,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   <div class="brand">
     <div class="brand-logo">W</div>
     <div>
-      <div class="brand-title">AI Weekly Intelligence</div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.2</div>
+      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.3</span></div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.3</div>
     </div>
   </div>
 
@@ -526,6 +540,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
         </div>
 
         <div class="source-actions">
+          <button class="secondary-btn" id="testSourcesBtn">🔎 소스 연결 테스트</button>
           <button class="secondary-btn" id="attachFileBtn">📎 문서 첨부</button>
           <input
             type="file"
@@ -537,6 +552,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
         </div>
 
         <div class="source-list" id="sourceList"></div>
+        <div class="source-test-result" id="sourceTestResult"></div>
         <div class="file-list" id="fileList"></div>
 
         <div class="study-mode-hint" id="studyModeHint">
@@ -1794,11 +1810,14 @@ function getCardSourceKind(card){
   return card.primarySourceKind==="reference"?"reference":"web";
 }
 
-function isRssAppFeed(url){
+function isDirectFeedUrl(url){
   try{
     const u=new URL(url);
     const host=u.hostname.replace(/^www\./,"").toLowerCase();
-    return host==="rss.app" && /\/feeds\//i.test(u.pathname);
+    if(host==="rss.app" && /\/feeds\//i.test(u.pathname))return true;
+    if(/\.(xml|rss|atom)$/i.test(u.pathname))return true;
+    if(/\/(feed|rss|atom)(\/|$)/i.test(u.pathname))return true;
+    return false;
   }catch{return false}
 }
 
@@ -1886,6 +1905,65 @@ document.getElementById("addSourceBtn").onclick=addSource;
 document.getElementById("sourceInput").addEventListener("keydown",e=>{
   if(e.key==="Enter"){e.preventDefault();addSource()}
 });
+
+
+async function testCurrentSources(){
+  const resultEl=document.getElementById("sourceTestResult");
+  const urls=currentSources();
+
+  resultEl.className="source-test-result show";
+  if(!urls.length){
+    resultEl.classList.add("error");
+    resultEl.textContent="등록된 참고소스가 없습니다.";
+    return;
+  }
+
+  const feeds=urls.filter(isDirectFeedUrl);
+  if(!feeds.length){
+    resultEl.classList.add("error");
+    resultEl.textContent="현재 연결 테스트는 RSS/XML 피드를 우선 진단합니다. RSS.app 피드 또는 공개 XML 피드를 등록하세요.";
+    return;
+  }
+
+  resultEl.textContent="RSS 서버 연결 테스트 중...";
+  feeds.forEach(url=>setSourceRuntimeStatus(url,"pending","테스트 중"));
+  renderSourceList();
+
+  try{
+    const data=await invokeSourceEdge(feeds);
+    const lines=[];
+
+    for(const source of data.sources||[]){
+      if(source.status==="ok"){
+        setSourceRuntimeStatus(source.url,"ok",`✓ ${source.item_count||0}건`);
+        lines.push(`✓ ${source.feed_title||"RSS 피드"}`);
+        lines.push(`URL: ${source.url}`);
+        lines.push(`항목 수: ${source.item_count||0}`);
+        const items=(source.items||[]).slice(0,5);
+        for(const [i,item] of items.entries()){
+          lines.push(`${i+1}. ${item.title||"(제목 없음)"}${item.published?` · ${item.published}`:""}`);
+        }
+      }else{
+        setSourceRuntimeStatus(source.url,"error","읽기 실패");
+        lines.push(`✗ ${source.url}`);
+        lines.push(`오류: ${source.error||"RSS 읽기 실패"}`);
+      }
+      lines.push("");
+    }
+
+    const success=(data.sources||[]).some(x=>x.status==="ok" && (x.item_count||0)>0);
+    resultEl.className=`source-test-result show ${success?"ok":"error"}`;
+    resultEl.textContent=lines.join("\n").trim()||"소스 응답이 비어 있습니다.";
+    renderSourceList();
+  }catch(error){
+    feeds.forEach(url=>setSourceRuntimeStatus(url,"error","연결 실패"));
+    renderSourceList();
+    resultEl.className="source-test-result show error";
+    resultEl.textContent=`소스 연결 실패\n${error.message||error}`;
+  }
+}
+
+document.getElementById("testSourcesBtn").onclick=()=>testCurrentSources();
 
 document.getElementById("attachFileBtn").onclick=()=>document.getElementById("sourceFileInput").click();
 
@@ -2274,7 +2352,8 @@ ${sourceText}
 
 ${prioritySourceSummary?`[중요: 사용자 참고소스 선행 분석 결과]
 아래 내용은 Google Search보다 먼저 사용자가 지정한 URL만 직접 읽어서 얻은 결과다.
-ACCESS: OK 후보는 이번 주 핵심 이슈 선별에서 우선 검토하고, 이후 공개 웹 검색은 사실·날짜 교차검증과 보완 용도로 사용한다.
+ACCESS: OK 후보는 선택 주간·현재 메뉴와 관련된다면 일반웹 후보보다 우선하여 카드 후보로 유지한다.
+이후 공개 웹 검색은 사실·날짜 교차검증과 빠진 이슈 보완 용도로만 사용한다.
 ACCESS: FAILED 소스의 내용은 추측하지 않는다.
 
 ${prioritySourceSummary}`:""}
@@ -2340,7 +2419,7 @@ async function analyzePrioritySources(){
   document.getElementById("researchStatusPill").textContent="참고소스 분석";
 
   const rssUrls=urls.filter(isRssAppFeed);
-  const contextUrls=urls.filter(url=>!isRssAppFeed(url));
+  const contextUrls=urls.filter(url=>!isDirectFeedUrl(url));
 
   const rssBlocks=[];
   const rssCitations=[];
@@ -2354,6 +2433,8 @@ async function analyzePrioritySources(){
       for(const source of fetched.sources||[]){
         if(source.status==="ok"){
           setSourceRuntimeStatus(source.url,"ok",`✓ ${source.item_count||0}건`);
+          rssSuccessCount+=1;
+          rssItemCount+=Number(source.item_count||0);
           rssBlocks.push(source.normalized||"");
           rssCitations.push(
             source.url,
@@ -2374,6 +2455,14 @@ async function analyzePrioritySources(){
       }
     }
     renderSourceList();
+
+    // RSS가 등록되어 있는데 실제로 한 건도 읽지 못했다면 일반웹으로 조용히 대체하지 않는다.
+    if(rssUrls.length && (rssSuccessCount===0 || rssItemCount===0)){
+      throw new Error(
+        "등록한 RSS 소스를 실제로 읽지 못했습니다. 일반웹 검색으로 대체하지 않고 중단했습니다. " +
+        "참고소스 창의 '소스 연결 테스트'에서 RSS 응답을 먼저 확인하세요."
+      );
+    }
   }
 
   const days=weekDays();
@@ -2451,6 +2540,8 @@ ACCESS: OK 또는 FAILED
   const output=extractLastText(result)||"";
   return {
     text:output,
+    rssSuccessCount,
+    rssItemCount,
     citations:[
       ...rssCitations,
       ...extractCitations(result),
@@ -2790,13 +2881,16 @@ ${report}
 13. 같은 사건을 기사별로 여러 카드로 만들지 않는다.
 14. 핵심 이슈 8~15개 정도를 우선한다.
 15. sourceUrls에는 제공된 실제 URL만 사용하며 URL을 지어내지 않는다.
-16. 각 카드의 발견 출처를 반드시 분류한다.
+16. 사용자 참고소스 선행 분석에 ACCESS: OK 후보가 있고 선택 주간·현재 메뉴와 관련된다면,
+   그 후보를 일반웹 이슈보다 먼저 카드화한다. 단순히 Google Search의 더 유명한 이슈로 대체하지 않는다.
+   관련된 참고소스 후보가 여러 개라면 최대 4개까지 우선 카드로 구성한다.
+17. 각 카드의 발견 출처를 반드시 분류한다.
    - 사용자 참고소스 선행 분석의 ACCESS: OK 후보에서 처음 발견한 주제라면 primarySourceKind="reference".
    - 그때 SOURCE_LABEL을 primarySourceLabel에 사용한다. 가능하면 @계정명 또는 피드/매체명을 유지한다.
    - primarySourceUrl은 ITEM_URL을 우선하고 없으면 SOURCE_ROOT_URL을 사용한다.
    - 참고소스에는 없고 Google Search에서 새로 발견한 주제면 primarySourceKind="web", primarySourceLabel="일반웹".
    - Google Search로 교차검증했다고 해서 reference 카드를 일반웹으로 바꾸지 않는다.
-17. 기존 카드와 사실상 같은 사건이고 새로운 변화가 없다면 결과에서 제외한다.
+18. 기존 카드와 사실상 같은 사건이고 새로운 변화가 없다면 결과에서 제외한다.
 `;
 
   const schema={
