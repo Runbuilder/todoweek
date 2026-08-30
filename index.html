@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.6</title>
+<title>AI Weekly Intelligence V7.7</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,7 +410,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.6 source-first attribution */
+/* V7.7 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
@@ -436,7 +436,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .source-test-result.error{border-color:#743746;background:#2a151c;color:#ff9aaa}
 
 
-/* V7.6 board visibility */
+/* V7.7 board visibility */
 .board-summary{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:10px
 }
@@ -486,8 +486,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   <div class="brand">
     <div class="brand-logo">W</div>
     <div>
-      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.6</span></div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.6</div>
+      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.7</span></div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.7</div>
     </div>
   </div>
 
@@ -1967,6 +1967,99 @@ async function invokeSourceEdge(urls=[],channelId=""){
   return data;
 }
 
+function parseModelJsonSafe(raw,fallback,label="AI JSON"){
+  const original=String(raw||"").trim();
+  if(!original)return fallback;
+
+  const candidates=[];
+  candidates.push(original);
+
+  const unfenced=original
+    .replace(/^```(?:json)?\s*/i,"")
+    .replace(/\s*```$/,"")
+    .trim();
+  if(unfenced!==original)candidates.push(unfenced);
+
+  const firstObj=unfenced.indexOf("{");
+  const lastObj=unfenced.lastIndexOf("}");
+  if(firstObj>=0&&lastObj>firstObj)candidates.push(unfenced.slice(firstObj,lastObj+1));
+
+  for(const candidate of [...new Set(candidates)]){
+    try{return JSON.parse(candidate)}catch(_){}
+  }
+
+  // Gemini가 가끔 `"cards":.` 같은 잘못된 placeholder나 trailing comma를 만들 때의 최소 복구.
+  for(const candidate of [...new Set(candidates)]){
+    const repaired=candidate
+      .replace(/:\s*\.\s*(?=[,}\]])/g,":null")
+      .replace(/,\s*([}\]])/g,"$1")
+      .replace(/\u0000/g,"");
+    try{return JSON.parse(repaired)}catch(_){}
+  }
+
+  console.warn(`${label} 파싱 실패 — 안전한 fallback 사용`,original.slice(0,900));
+  return fallback;
+}
+
+function balancedSourceCandidates(items,maxTotal=40,perSourceMax=14){
+  const groups=new Map();
+  for(const item of items||[]){
+    const key=item.sourceRootUrl||item.sourceLabel||"source";
+    if(!groups.has(key))groups.set(key,[]);
+    if(groups.get(key).length<perSourceMax)groups.get(key).push(item);
+  }
+
+  const arrays=[...groups.values()];
+  const out=[];
+  let index=0;
+  while(out.length<maxTotal){
+    let added=false;
+    for(const arr of arrays){
+      if(arr[index]){
+        out.push(arr[index]);
+        added=true;
+        if(out.length>=maxTotal)break;
+      }
+    }
+    if(!added)break;
+    index++;
+  }
+  return out;
+}
+
+function ensureSourceCoverage(selected,pool,maxTotal=8){
+  const groups=new Map();
+  for(const item of pool||[]){
+    const key=item.sourceRootUrl||item.sourceLabel||"source";
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(item);
+  }
+
+  const byId=new Map((pool||[]).map(x=>[x.candidateId,x]));
+  const selectedIds=new Set((selected||[]).map(x=>x.candidateId));
+  const out=[];
+
+  // 먼저 각 소스에서 최소 1개씩 보장
+  for(const group of groups.values()){
+    const preferred=(selected||[]).find(x=>group.some(g=>g.candidateId===x.candidateId)) || group[0];
+    if(preferred && !out.some(x=>x.candidateId===preferred.candidateId))out.push(preferred);
+  }
+
+  // 그 다음 AI가 고른 순서를 채움
+  for(const item of selected||[]){
+    if(out.length>=maxTotal)break;
+    if(byId.has(item.candidateId) && !out.some(x=>x.candidateId===item.candidateId))out.push(item);
+  }
+
+  // 그래도 부족하면 round-robin 후보를 채움
+  for(const item of balancedSourceCandidates(pool,maxTotal,14)){
+    if(out.length>=maxTotal)break;
+    if(!out.some(x=>x.candidateId===item.candidateId))out.push(item);
+  }
+
+  return out.slice(0,maxTotal);
+}
+
 function sourceType(url){
   const low=url.toLowerCase();
   if(isYouTubeVideo(url))return "YouTube 영상";
@@ -2616,15 +2709,16 @@ ACCESS: OK 또는 FAILED`,
   if(allItems.length){
     setProgress(
       "2단계 · 참고소스 주제 선별",
-      `RSS에서 실제 ${allItems.length}개 항목을 읽었습니다. 날짜와 무관하게 유튜브 소재를 고릅니다.`
+      `RSS ${rssUrls.length}개에서 실제 ${allItems.length}개 항목을 읽었습니다. 소스별 균형을 유지해 유튜브 소재를 고릅니다.`
     );
 
-    const candidateText=allItems.slice(0,40).map(x=>[
+    const candidatePool=balancedSourceCandidates(allItems,40,14);
+    const candidateText=candidatePool.map(x=>[
       `ID: ${x.candidateId}`,
       `SOURCE: ${x.sourceLabel}`,
       `PUBLISHED: ${x.rawPublishedAt||x.publishedAt||"미상"}`,
       `TITLE: ${x.rawTitle||"(제목 없음)"}`,
-      `SUMMARY: ${(x.rawSummary||"").slice(0,1800)}`,
+      `SUMMARY: ${(x.rawSummary||"").slice(0,1500)}`,
       `URL: ${x.itemUrl}`
     ].join("\n")).join("\n\n---\n\n");
 
@@ -2662,6 +2756,8 @@ ${userPrompt}
 목적은 달력의 사건 날짜를 맞추는 것이 아니라 사용자가 유튜브로 만들 가치가 있는 주제를 발굴하는 것이다.
 
 가장 쓸모 있는 항목을 최대 8개 고른다.
+여러 SOURCE가 있다면 특정 소스에 몰리지 않게 각 SOURCE에서 최소 1개씩 우선 검토한다.
+가능하면 각 SOURCE에서 1~3개씩 균형 있게 선택한다.
 - 새로움
 - 실전 활용성
 - 시청자가 궁금해할 변화
@@ -2674,25 +2770,26 @@ ${candidateText}`,
       response_format:{type:"text",mime_type:"application/json",schema}
     });
 
-    const parsed=JSON.parse(extractLastText(selectionResult)||'{"selected":[]}');
+    const parsed=parseModelJsonSafe(
+      extractLastText(selectionResult),
+      {selected:[]},
+      "참고소스 주제선별 JSON"
+    );
     const byId=new Map(allItems.map(x=>[x.candidateId,x]));
-    selectedItems=(parsed.selected||[])
+    const aiSelected=(Array.isArray(parsed.selected)?parsed.selected:[])
       .map(sel=>byId.has(sel.candidateId)?{
         ...byId.get(sel.candidateId),
         contentAngle:String(sel.contentAngle||"").trim(),
         usefulnessReason:String(sel.usefulnessReason||"").trim()
       }:null)
-      .filter(Boolean)
-      .slice(0,8);
+      .filter(Boolean);
 
-    // Gemini가 유효 ID를 하나도 선택하지 못한 경우에도 실제 RSS 상위 항목을 보존한다.
-    if(!selectedItems.length){
-      selectedItems=allItems.slice(0,8).map(x=>({
+    selectedItems=ensureSourceCoverage(aiSelected,candidatePool,8)
+      .map(x=>({
         ...x,
-        contentAngle:x.rawTitle,
-        usefulnessReason:"사용자 지정 참고소스에서 직접 수집된 콘텐츠 후보"
+        contentAngle:x.contentAngle||x.rawTitle,
+        usefulnessReason:x.usefulnessReason||"사용자 지정 참고소스에서 직접 수집된 콘텐츠 후보"
       }));
-    }
 
     selectionText=selectedItems.map(x=>[
       `CANDIDATE_ID: ${x.candidateId}`,
@@ -2962,7 +3059,7 @@ ${fileNames.join("\n")}
   const raw=extractLastText(result);
   if(!raw)throw new Error("학습 계획 응답이 비어 있습니다.");
 
-  const parsed=JSON.parse(raw);
+  const parsed=parseModelJsonSafe(raw,{cards:[]},"학습 계획 JSON");
   if(!Array.isArray(parsed.cards))throw new Error("학습 계획 결과 형식이 올바르지 않습니다.");
 
   return parsed.cards
@@ -3071,14 +3168,23 @@ ${evidence}
     response_format:{type:"text",mime_type:"application/json",schema}
   });
 
-  const parsed=JSON.parse(extractLastText(result)||'{"cards":[]}');
-  const byId=new Map(selectedItems.map(x=>[x.candidateId,x]));
+  const parsed=parseModelJsonSafe(
+    extractLastText(result),
+    {cards:[]},
+    "참고소스 카드 JSON"
+  );
 
-  const cards=(parsed.cards||[]).map(x=>{
-    const src=byId.get(x.candidateId);
-    if(!src)return null;
+  const enrichedById=new Map(
+    (Array.isArray(parsed.cards)?parsed.cards:[])
+      .filter(x=>x&&x.candidateId)
+      .map(x=>[x.candidateId,x])
+  );
+
+  // AI JSON이 깨지거나 일부 카드만 반환돼도 실제 RSS 카드 자체는 절대 잃지 않는다.
+  const cards=selectedItems.map(src=>{
+    const x=enrichedById.get(src.candidateId)||{};
     const itemUrl=validHttpUrl(src.itemUrl||"")?src.itemUrl:src.sourceRootUrl;
-    const verification=(x.verificationUrls||[]).filter(validHttpUrl);
+    const verification=(Array.isArray(x.verificationUrls)?x.verificationUrls:[]).filter(validHttpUrl);
 
     return {
       id:crypto.randomUUID(),
@@ -3087,12 +3193,18 @@ ${evidence}
       status:"reported",
       impact:["high","medium","low"].includes(x.impact)?x.impact:"medium",
       title:x.title||src.rawTitle||"참고소스 주제",
-      summary:x.summary||src.rawSummary||"",
+      summary:x.summary||src.rawSummary||"참고소스에서 수집된 원문 요약을 확인하세요.",
       youtubeScript:"",
       deepAnalysis:"",
-      whyImportant:x.whyImportant||src.usefulnessReason||"",
-      outlook:x.outlook||"",
-      watchpoints:Array.isArray(x.watchpoints)?x.watchpoints:[],
+      whyImportant:x.whyImportant||src.usefulnessReason||"유튜브 콘텐츠 후보로 검토할 가치가 있는 참고소스 항목",
+      outlook:x.outlook||"필요하면 카드의 심층 분석에서 공식 자료와 추가 사실을 검증하세요.",
+      watchpoints:Array.isArray(x.watchpoints)&&x.watchpoints.length
+        ?x.watchpoints
+        :[
+          `원문 핵심: ${src.rawTitle||"참고소스 게시물"}`,
+          "공식 발표·원문 자료와 비교 검증",
+          "유튜브에서 직접 시연하거나 비교할 수 있는 포인트 확인"
+        ],
       sourcePublishedAt:src.publishedAt||src.rawPublishedAt||"",
       temporalBasis:"",
       primarySourceLabel:src.sourceLabel||"참고소스",
@@ -3100,7 +3212,7 @@ ${evidence}
       primarySourceKind:"reference",
       sourceUrls:[...new Set([itemUrl,src.sourceRootUrl,...verification].filter(validHttpUrl))]
     };
-  }).filter(Boolean);
+  });
 
   return distributeReferenceCards(cards);
 }
@@ -3215,8 +3327,11 @@ ${report}
   const text=extractLastText(result);
   if(!text)throw new Error("카드 생성 응답이 비어 있습니다.");
 
-  const parsed=JSON.parse(text);
-  if(!Array.isArray(parsed.cards))throw new Error("Gemini 카드 결과 형식이 올바르지 않습니다.");
+  const parsed=parseModelJsonSafe(text,{cards:[]},"일반웹 카드 JSON");
+  if(!Array.isArray(parsed.cards)){
+    console.warn("일반웹 카드 형식 오류 — 참고소스 카드만 유지합니다.");
+    return [];
+  }
 
   return parsed.cards
     .filter(x=>validDates.includes(x.dateKey)&&x.title)
@@ -3321,8 +3436,6 @@ document.getElementById("generateBtn").onclick=async()=>{
 
     if(sourceCards.length)webCards=webCards.slice(0,5);
     const cards=[...sourceCards,...webCards];
-    if(!cards.length)throw new Error("선택 주간에 새로 반영할 핵심 이슈가 발견되지 않았습니다.");
-
     if(!cards.length)throw new Error("생성할 카드가 없습니다.");
     const sourceCount=cards.filter(c=>c.primarySourceKind==="reference").length;
     const webCount=cards.length-sourceCount;
