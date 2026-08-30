@@ -1,0 +1,3730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI Weekly Intelligence V7.0</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#09101e;--panel:#121c30;--panel2:#192640;--border:#293a59;
+  --text:#edf4ff;--muted:#8d9db8;--primary:#5182ff;--purple:#7662ff;
+  --red:#ff5068;--yellow:#ffbd42;--green:#38cb86;--blue:#4d8aff;
+}
+body{
+  margin:0;min-height:100vh;overflow-x:hidden;
+  background:radial-gradient(circle at 40% -20%,#17284d 0,transparent 34%),var(--bg);
+  color:var(--text);
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+button,input,textarea,select{font:inherit} button{cursor:pointer}
+.topbar{
+  height:74px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;
+  position:sticky;top:0;z-index:20;border-bottom:1px solid var(--border);
+  background:rgba(9,16,30,.94);backdrop-filter:blur(14px);
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:235px}
+.brand-logo{
+  width:39px;height:39px;display:grid;place-items:center;border-radius:11px;
+  background:linear-gradient(135deg,#25caff,#5268ff);font-weight:900;
+  box-shadow:0 8px 28px rgba(49,115,255,.28)
+}
+.brand-title{font-size:17px;font-weight:900;letter-spacing:-.5px}
+.brand-sub{margin-top:2px;font-size:10px;color:var(--muted)}
+.week-nav{flex:1;display:flex;align-items:center;justify-content:center;gap:8px}
+.week-title{min-width:205px;text-align:center;font-size:15px;font-weight:800}
+.header-actions{display:flex;gap:8px}
+.icon-btn,.secondary-btn{border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:10px}
+.icon-btn{width:38px;height:38px;display:grid;place-items:center}
+.today-btn{width:auto;padding:0 13px}
+.primary-btn{
+  border:0;border-radius:10px;padding:10px 15px;color:white;font-weight:850;
+  background:linear-gradient(135deg,var(--primary),var(--purple));
+  box-shadow:0 7px 23px rgba(79,125,255,.24)
+}
+.primary-btn:disabled,.secondary-btn:disabled{opacity:.55;cursor:not-allowed}
+.secondary-btn{padding:9px 13px}
+.danger-btn{
+  padding:9px 13px;border-radius:10px;border:1px solid rgba(255,80,104,.35);
+  color:#ff98a8;background:rgba(255,80,104,.08)
+}
+.category-area{padding:20px 24px 9px}
+.board-heading{font-size:26px;font-weight:950;letter-spacing:-1px}
+.board-desc{margin-top:5px;font-size:12px;color:var(--muted)}
+.category-tabs{margin-top:17px;display:flex;gap:7px;overflow-x:auto;padding-bottom:5px}
+.category-tab{
+  white-space:nowrap;border:1px solid var(--border);background:#131e33;color:#9cacc6;
+  padding:10px 14px;border-radius:10px;font-size:12px;font-weight:800
+}
+.category-tab.active{
+  color:white;border-color:#557dff;
+  background:linear-gradient(135deg,rgba(77,134,255,.25),rgba(118,98,255,.18))
+}
+.toolbar{
+  padding:8px 24px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap
+}
+.legend{display:flex;flex-wrap:wrap;gap:7px}
+.legend-item{
+  display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;
+  background:rgba(255,255,255,.035);font-size:10px;color:#a6b5cc
+}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+.board-wrap{padding:0 24px 32px;overflow-x:auto}
+.board{display:grid;grid-template-columns:repeat(7,minmax(245px,1fr));gap:10px;min-width:1780px}
+.day-column{
+  overflow:hidden;min-height:650px;border-radius:13px;border:1px solid var(--border);background:#10192b
+}
+.day-column.today{border-color:rgba(80,132,255,.75);box-shadow:0 0 0 1px rgba(80,132,255,.12)}
+.day-header{
+  height:64px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;
+  background:#18243a;border-bottom:1px solid var(--border)
+}
+.day-column.today .day-header{
+  background:linear-gradient(135deg,rgba(77,135,255,.21),rgba(113,89,255,.08))
+}
+.day-name{font-size:14px;font-weight:900}
+.day-date{margin-top:3px;font-size:10px;color:var(--muted)}
+.day-add{
+  width:29px;height:29px;border-radius:8px;border:1px solid var(--border);
+  background:#22314c;color:#dce7ff;font-size:18px
+}
+.card-list{min-height:580px;padding:9px;display:flex;flex-direction:column;gap:9px}
+.card-list.drag-over{background:rgba(78,131,255,.07)}
+.board-card{
+  position:relative;padding:12px 12px 12px 14px;border-radius:11px;
+  border:1px solid rgba(255,255,255,.08);border-left:5px solid var(--accent);
+  background:#f4f7fb;color:#182131;box-shadow:0 4px 14px rgba(0,0,0,.15);
+  transition:.16s;cursor:grab
+}
+.board-card:hover{transform:translateY(-2px);box-shadow:0 9px 23px rgba(0,0,0,.2)}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:7px}
+.card-badges{display:flex;flex-wrap:wrap;gap:4px}
+.badge{padding:3px 6px;border-radius:999px;font-size:9px;font-weight:850;background:#e7ebf2;color:#526072}
+.badge.status-reported{background:#e1edff;color:#236bd5}
+.badge.status-scheduled{background:#ffe1e7;color:#d43c58}
+.badge.status-watch{background:#eee6ff;color:#7046cc}
+.badge.status-tentative{background:#fff0cf;color:#a96c00}
+.badge.impact-high{background:#ffe4e8;color:#d53d54}
+.badge.impact-medium{background:#fff0d7;color:#a66a05}
+.badge.impact-low{background:#e1f5ea;color:#267d52}
+.badge.script-ready{background:#e9e4ff;color:#6645cc}
+.card-title{font-size:13px;font-weight:900;line-height:1.42;letter-spacing:-.2px}
+.card-summary{margin-top:7px;font-size:11px;line-height:1.58;color:#5d6878}
+.card-section{margin-top:8px;padding-top:7px;border-top:1px solid #e4e8ef}
+.card-section-title{margin-bottom:3px;font-size:9px;font-weight:900;color:#364357}
+.card-section-text{font-size:10px;line-height:1.5;color:#667284}
+.watch-list{margin:4px 0 0;padding-left:16px;color:#657184;font-size:10px;line-height:1.5}
+.card-sources{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.source-link{
+  max-width:115px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  text-decoration:none;font-size:9px;padding:3px 6px;border-radius:6px;background:#e8edf5;color:#496078
+}
+.card-menu{position:absolute;right:7px;bottom:6px;opacity:0;border:0;background:transparent;color:#738094}
+.board-card:hover .card-menu{opacity:1}
+.empty{padding:30px 8px;text-align:center;color:#61708b;font-size:11px;line-height:1.6}
+.modal-backdrop{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:20px;z-index:100;
+  background:rgba(2,7,16,.75);backdrop-filter:blur(7px)
+}
+.modal-backdrop.show{display:flex}
+.modal{
+  width:min(620px,100%);max-height:92vh;overflow:auto;border:1px solid #30425f;
+  border-radius:17px;background:#151f34;box-shadow:0 30px 90px rgba(0,0,0,.55)
+}
+.modal.large{width:min(800px,100%)}
+.modal-header{padding:18px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.modal-title{font-size:17px;font-weight:900}
+.modal-close{width:32px;height:32px;border:0;background:transparent;color:#9faec5;font-size:20px}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px 20px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.field{margin-bottom:16px}
+.field label{display:block;margin-bottom:7px;font-size:11px;font-weight:800;color:#b4c1d5}
+.field input,.field textarea,.field select{
+  width:100%;outline:none;border:1px solid #30415f;border-radius:10px;
+  padding:11px 12px;color:#eef5ff;background:#10192b
+}
+.field textarea{min-height:110px;resize:vertical;line-height:1.55}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#5c84ff}
+.field-help{margin-top:6px;color:#7586a2;font-size:10px;line-height:1.5}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.source-box{margin-bottom:18px;padding:14px;border:1px solid #2e405f;border-radius:12px;background:#111a2c}
+.source-box-title{font-size:12px;font-weight:900}
+.source-box-desc{margin-top:5px;color:#7f91ad;font-size:10px;line-height:1.5}
+.source-add-row{display:flex;gap:7px;margin-top:11px}
+.source-add-row input{
+  flex:1;border:1px solid #30415e;border-radius:9px;padding:10px 11px;color:white;background:#0d1627;outline:none
+}
+.source-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.source-item{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;border:1px solid #273955;background:#17233a}
+.source-type{flex:none;padding:3px 6px;border-radius:6px;background:#243453;color:#9db9ec;font-size:9px;font-weight:800}
+.source-url{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#b4c3d9;font-size:10px}
+.source-remove{border:0;background:transparent;color:#8090a9;font-size:15px}
+.source-empty{padding:8px 0 2px;font-size:10px;color:#687993}
+.radio-group{display:flex;gap:8px}
+.radio-card{flex:1;cursor:pointer;padding:11px;border:1px solid #30425f;border-radius:10px;background:#10192b;color:#bac6da;font-size:11px}
+.switch-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0}
+.switch-info strong{display:block;font-size:12px}
+.switch-info span{display:block;margin-top:3px;font-size:10px;color:var(--muted)}
+.switch{width:45px;height:25px;position:relative}
+.switch input{display:none}
+.slider{position:absolute;inset:0;border-radius:99px;background:#36445d}
+.slider:before{
+  content:"";position:absolute;width:19px;height:19px;top:3px;left:3px;border-radius:50%;background:white;transition:.2s
+}
+.switch input:checked + .slider{background:#587aff}
+.switch input:checked + .slider:before{transform:translateX(20px)}
+.api-status{min-height:20px;margin-top:12px;white-space:pre-wrap;color:#91a3be;font-size:11px;line-height:1.5}
+.api-status.success{color:#50da8b}
+.api-status.error{color:#ff8191}
+.progress-box{display:none;margin-top:12px;padding:11px;border-radius:9px;background:#111c31;border:1px solid #29405f}
+.progress-box.show{display:block}
+.progress-title{font-size:11px;font-weight:850}
+.progress-sub{margin-top:4px;color:#8093b0;font-size:10px}
+
+.btn-spinner{
+  width:14px;height:14px;display:none;flex:none;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+  animation:spin .75s linear infinite
+}
+.primary-btn.loading{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px
+}
+.primary-btn.loading .btn-spinner{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.research-meta{
+  margin-top:7px;display:flex;flex-wrap:wrap;gap:6px
+}
+.research-pill{
+  padding:3px 7px;border-radius:999px;background:#1b2a45;
+  color:#9bb0d0;font-size:9px;border:1px solid #2b4367
+}
+.youtube-panel{
+  margin-top:4px;padding:14px;border:1px solid #3b3768;border-radius:12px;
+  background:linear-gradient(135deg,rgba(112,85,216,.12),rgba(55,91,175,.08))
+}
+.youtube-panel .field{margin-bottom:0}
+.youtube-status{margin-top:7px;color:#9caace;font-size:10px;min-height:16px;white-space:pre-wrap}
+.youtube-status.error{color:#ff8191}
+.youtube-status.success{color:#55d991}
+.model-grid{display:grid;grid-template-columns:1fr;gap:4px}
+.model-card{
+  padding:12px;border:1px solid #2d405e;border-radius:11px;background:#10192b;margin-bottom:12px
+}
+.model-card-title{font-size:12px;font-weight:900;margin-bottom:4px}
+.model-card-desc{font-size:10px;color:#7e90ac;line-height:1.45;margin-bottom:9px}
+.model-card select{width:100%;border:1px solid #30415f;border-radius:9px;padding:9px 10px;background:#0d1627;color:#edf4ff}
+.toast{
+  position:fixed;z-index:200;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;
+  pointer-events:none;padding:11px 16px;border-radius:10px;background:#263650;color:white;font-size:11px;
+  box-shadow:0 12px 35px rgba(0,0,0,.35);transition:.25s
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.modal.xlarge{width:min(980px,100%)}
+.board-card{min-height:82px;padding:11px 34px 11px 13px;cursor:pointer}
+.board-card .card-summary,.board-card .card-section,.board-card .card-sources{display:none!important}
+.card-top{justify-content:flex-start;gap:4px;margin-bottom:7px}
+.card-badges{gap:4px}
+.card-menu{opacity:1;width:26px;height:26px;right:6px;bottom:6px;border-radius:7px;display:grid;place-items:center}
+.card-menu:hover{background:#e8edf5;color:#40516a}
+.badge.deep-ready{background:#e4efff;color:#275fc2}
+.detail-hero{padding:3px 0 16px}
+.detail-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.detail-title{font-size:26px;line-height:1.35;font-weight:950;letter-spacing:-.7px}
+.detail-section{padding:17px 0;border-top:1px solid #2a3b57}
+.detail-label{font-size:11px;font-weight:900;color:#9db0cc;margin-bottom:7px}
+.detail-text{font-size:13px;line-height:1.75;color:#e2e9f4;white-space:pre-wrap}
+.detail-list{margin:0;padding-left:20px;color:#e2e9f4;font-size:13px;line-height:1.7}
+.detail-sources{display:flex;gap:7px;flex-wrap:wrap}
+.detail-source{text-decoration:none;padding:7px 9px;border-radius:8px;border:1px solid #314563;background:#10192b;color:#9fc0f2;font-size:10px}
+.content-box{padding:15px;border:1px solid #334865;border-radius:12px;background:#10192b;color:#e2e9f4;font-size:12px;line-height:1.7;white-space:pre-wrap}
+.action-status{margin-top:9px;font-size:10px;color:#9badc8;white-space:pre-wrap}
+.action-status.success{color:#56da8e}.action-status.error{color:#ff8798}
+.secondary-btn.loading{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.secondary-btn.loading .btn-spinner{display:inline-block}
+.fast-mode-box{padding:12px;border:1px solid #2e405f;border-radius:11px;background:#111a2c;margin-bottom:15px}
+.fast-mode-title{font-size:11px;font-weight:900}.fast-mode-desc{margin-top:4px;font-size:9px;color:#8091aa;line-height:1.5}
+
+@media(max-width:900px){
+  .topbar{height:auto;min-height:70px;flex-wrap:wrap;padding:12px 14px}
+  .brand{min-width:auto}.week-nav{order:3;width:100%}
+  .category-area,.toolbar,.board-wrap{padding-left:14px;padding-right:14px}
+  .two-col{grid-template-columns:1fr}
+}
+
+/* Dynamic menu + file sources + study mode */
+.category-tab{position:relative;padding-right:28px}
+.category-tab .tab-delete{
+  position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;border-radius:50%;display:grid;place-items:center;
+  color:#71829d;font-size:11px;font-weight:900
+}
+.category-tab .tab-delete:hover{background:rgba(255,82,107,.16);color:#ff8b9c}
+.category-add{
+  min-width:38px;padding:9px 11px;border:1px dashed #46618a;border-radius:10px;
+  background:#101a2d;color:#a9bce0;font-size:16px;font-weight:900
+}
+.category-add:hover{border-color:#638cff;color:#fff;background:#182640}
+
+.source-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.file-list{display:flex;flex-direction:column;gap:6px;margin-top:9px}
+.file-item{
+  display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;
+  border:1px solid #315045;background:#142a27
+}
+.file-type{
+  flex:none;padding:3px 6px;border-radius:6px;background:#1e463d;
+  color:#8fe5c5;font-size:9px;font-weight:850
+}
+.file-name{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#c7e7dc;font-size:10px}
+.file-size{color:#789b90;font-size:9px}
+.file-remove{border:0;background:transparent;color:#81a59a;font-size:15px}
+.study-mode-hint{
+  display:none;margin-top:10px;padding:9px 10px;border-radius:9px;
+  border:1px solid #2d6655;background:rgba(45,132,103,.12);
+  color:#9ae8cb;font-size:10px;line-height:1.5
+}
+.study-mode-hint.show{display:block}
+.badge.status-study{background:#ddf7eb;color:#21845a}
+.detail-file{
+  display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border-radius:8px;
+  border:1px solid #315045;background:#10231f;color:#9fe5ca;font-size:10px
+}
+.menu-prompt-preview{
+  margin-top:7px;padding:9px 10px;border-radius:9px;background:#10192b;
+  border:1px solid #2d405e;color:#8ea0bb;font-size:10px;line-height:1.5;
+  max-height:90px;overflow:auto;white-space:pre-wrap
+}
+
+
+/* Supabase cloud sync */
+.settings-divider{
+  margin:18px 0 14px;padding-top:16px;border-top:1px solid #2d3e5b
+}
+.settings-section-title{
+  font-size:13px;font-weight:900;margin-bottom:5px
+}
+.settings-section-desc{
+  color:#7f90aa;font-size:10px;line-height:1.5;margin-bottom:12px
+}
+.supabase-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.supabase-auth-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.cloud-status{
+  margin-top:10px;padding:10px 11px;border-radius:9px;border:1px solid #30415e;
+  background:#10192b;color:#91a3be;font-size:10px;line-height:1.5;white-space:pre-wrap
+}
+.cloud-status.ok{border-color:#2c6e55;background:rgba(40,139,98,.10);color:#74dcae}
+.cloud-status.error{border-color:#6a3542;background:rgba(171,57,80,.10);color:#ff8da0}
+.cloud-status.busy{border-color:#405e8f;background:rgba(79,132,255,.09);color:#9bbcff}
+.sync-indicator{position:relative}
+.sync-indicator:after{
+  content:"";position:absolute;right:5px;bottom:5px;width:7px;height:7px;border-radius:50%;
+  background:#65738a;border:1px solid #10192b
+}
+.sync-indicator.sync-ok:after{background:#37cb86}
+.sync-indicator.sync-busy:after{background:#ffbd42}
+.sync-indicator.sync-error:after{background:#ff536c}
+.sync-indicator.sync-off:after{background:#65738a}
+.remote-tag{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:999px;
+  background:#e7f7ef;color:#287d57;font-size:8px;font-weight:850
+}
+.local-tag{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:999px;
+  background:#fff0d7;color:#a66a05;font-size:8px;font-weight:850
+}
+@media(max-width:700px){.supabase-grid{grid-template-columns:1fr}}
+
+
+/* V7 multi-user auth / secure BYOK */
+.auth-gate{
+  position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;
+  padding:22px;background:
+    radial-gradient(circle at 50% 10%,rgba(78,126,255,.22),transparent 35%),
+    rgba(6,11,22,.97);backdrop-filter:blur(12px)
+}
+.auth-gate.hidden{display:none}
+.auth-panel{
+  width:min(440px,100%);padding:34px;border:1px solid #304564;border-radius:22px;
+  background:linear-gradient(180deg,#16233a,#10192b);box-shadow:0 40px 100px rgba(0,0,0,.48);
+  text-align:center
+}
+.auth-logo{
+  width:58px;height:58px;margin:0 auto 16px;display:grid;place-items:center;border-radius:16px;
+  background:linear-gradient(135deg,#25caff,#5268ff);font-size:22px;font-weight:950;
+  box-shadow:0 12px 35px rgba(57,121,255,.3)
+}
+.auth-title{font-size:24px;font-weight:950;letter-spacing:-.8px}
+.auth-desc{margin:10px auto 22px;max-width:350px;color:#8fa0bb;font-size:12px;line-height:1.65}
+.google-login-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 16px;
+  border-radius:11px;border:1px solid #d7dce5;background:#fff;color:#202634;font-size:13px;font-weight:850
+}
+.google-g{
+  width:22px;height:22px;display:grid;place-items:center;border-radius:50%;
+  background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 0 50%,#fbbc05 0 75%,#ea4335 0);
+  color:white;font-weight:950;font-size:12px
+}
+.auth-status{min-height:20px;margin-top:12px;color:#91a3bd;font-size:10px;line-height:1.5;white-space:pre-wrap}
+.auth-note{margin-top:16px;color:#657691;font-size:9px;line-height:1.55}
+
+.user-chip{
+  display:none;align-items:center;gap:7px;max-width:180px;height:38px;padding:0 10px;
+  border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--text)
+}
+.user-chip.show{display:flex}
+.user-avatar{
+  width:24px;height:24px;border-radius:50%;object-fit:cover;background:#2b3b58;flex:none
+}
+.user-chip-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:800}
+
+.account-card,.secure-key-card{
+  padding:13px;border:1px solid #2f4260;border-radius:12px;background:#10192b;margin-bottom:15px
+}
+.account-row{display:flex;align-items:center;gap:11px}
+.account-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#283a57}
+.account-main{flex:1;min-width:0}
+.account-name{font-size:12px;font-weight:900}
+.account-email{margin-top:3px;color:#8192ad;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.secure-key-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+.secure-key-title{font-size:12px;font-weight:900}
+.key-status-pill{
+  padding:4px 8px;border-radius:999px;background:#2c3548;color:#8d9cb3;font-size:9px;font-weight:850
+}
+.key-status-pill.ok{background:#173c31;color:#70dbab}
+.key-status-pill.error{background:#492330;color:#ff8da0}
+.key-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.secure-notice{
+  margin-top:8px;padding:8px 9px;border-radius:8px;background:rgba(54,202,134,.08);
+  border:1px solid rgba(54,202,134,.2);color:#83cdb0;font-size:9px;line-height:1.5
+}
+.legacy-box{
+  display:none;margin-top:12px;padding:10px;border:1px dashed #526a90;border-radius:10px;
+  background:rgba(80,110,160,.08);color:#9eb0ca;font-size:10px;line-height:1.5
+}
+.legacy-box.show{display:block}
+@media(max-width:760px){
+  .user-chip{max-width:48px;padding:0 7px}
+  .user-chip-text{display:none}
+}
+
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+
+<div class="auth-gate" id="authGate">
+  <div class="auth-panel">
+    <div class="auth-logo">AI</div>
+    <div class="auth-title">AI Weekly Intelligence</div>
+    <div class="auth-desc">
+      Google 계정으로 로그인하면 메뉴, 카드, 문서, 심층 분석과 유튜브 스크립트가
+      사용자별 Supabase 공간에 안전하게 저장됩니다.
+    </div>
+    <button class="google-login-btn" id="googleLoginBtn">
+      <span class="google-g">G</span>
+      Google로 계속하기
+    </button>
+    <div class="auth-status" id="authGateStatus"></div>
+    <div class="auth-note">
+      로그인 후 본인의 Gemini API Key를 한 번 등록하면 서버에서 암호화하여 보관하며,
+      브라우저에는 API Key 원문을 저장하지 않습니다.
+    </div>
+  </div>
+</div>
+
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-logo">W</div>
+    <div>
+      <div class="brand-title">AI Weekly Intelligence</div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.0</div>
+    </div>
+  </div>
+
+  <div class="week-nav">
+    <button class="icon-btn" id="prevWeek">‹</button>
+    <button class="icon-btn today-btn" id="thisWeek">이번 주</button>
+    <div class="week-title" id="weekTitle"></div>
+    <button class="icon-btn" id="nextWeek">›</button>
+  </div>
+
+  <div class="header-actions">
+    <button class="primary-btn" id="aiFillBtn">✨ AI 채우기</button>
+    <button class="user-chip" id="userChip" title="계정 · 설정">
+      <img class="user-avatar" id="userChipAvatar" alt="">
+      <span class="user-chip-text" id="userChipText">사용자</span>
+    </button>
+    <button class="icon-btn sync-indicator sync-off" id="settingsBtn" title="설정 · 로그인 필요">⚙</button>
+  </div>
+</header>
+
+<section class="category-area">
+  <div class="board-heading" id="boardHeading"></div>
+  <div class="board-desc" id="boardDesc"></div>
+  <div class="category-tabs" id="categoryTabs"></div>
+</section>
+
+<section class="toolbar">
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:#4d8aff"></span>보도</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#ff5068"></span>예정</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#8a62e8"></span>관전</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#ffbd42"></span>변동 가능</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#2fc785"></span>학습</span>
+  </div>
+  <div>
+    <button class="secondary-btn" id="exportBtn">↓ 내보내기</button>
+    <button class="secondary-btn" id="importBtn">↑ 가져오기</button>
+    <button class="danger-btn" id="clearBtn">이번 주 비우기</button>
+    <input type="file" id="importFile" accept=".json" hidden>
+  </div>
+</section>
+
+<main class="board-wrap"><div class="board" id="board"></div></main>
+
+<!-- AI FILL MODAL -->
+<div class="modal-backdrop" id="aiModal">
+  <div class="modal large">
+    <div class="modal-header">
+      <div class="modal-title">✨ Gemini로 이번 주 채우기</div>
+      <button class="modal-close" data-close="aiModal">×</button>
+    </div>
+    <div class="modal-body">
+<div class="source-box">
+        <div class="source-box-title">🔗 참고 소스</div>
+        <div class="source-box-desc">
+          URL·RSS·YouTube·SNS 주소 또는 학습할 문서를 추가할 수 있습니다.
+          PDF·TXT·MD·CSV·JSON·DOCX·PPTX·HWPX를 지원합니다.
+          URL만 있으면 현재 메뉴의 주간 브리핑을 만들고, 문서가 하나라도 첨부되면 자동으로
+          <b>학습 TODO 모드</b>로 전환하여 문서 내용을 한 주에 나눠 학습 카드로 배치합니다.
+        </div>
+
+        <div class="source-add-row">
+          <input id="sourceInput" placeholder="https://...  뉴스 / RSS / YouTube / SNS 주소">
+          <button class="secondary-btn" id="addSourceBtn">+ URL</button>
+        </div>
+
+        <div class="source-actions">
+          <button class="secondary-btn" id="attachFileBtn">📎 문서 첨부</button>
+          <input
+            type="file"
+            id="sourceFileInput"
+            accept=".pdf,.txt,.md,.csv,.json,.docx,.pptx,.hwpx,application/pdf,text/plain,text/markdown,text/csv,application/json"
+            multiple
+            hidden
+          >
+        </div>
+
+        <div class="source-list" id="sourceList"></div>
+        <div class="file-list" id="fileList"></div>
+
+        <div class="study-mode-hint" id="studyModeHint">
+          📚 문서가 첨부되어 학습 TODO 모드로 전환되었습니다.
+          이번 주 카드는 뉴스가 아니라 문서의 학습 순서와 핵심 내용을 기준으로 생성됩니다.
+        </div>
+      </div>
+
+      <div class="field">
+        <label>AI에게 요청할 내용</label>
+        <textarea id="aiPrompt" style="min-height:145px"></textarea>
+        <div class="field-help">
+          URL만 입력하면 주간 브리핑, 문서를 첨부하면 학습 TODO 모드로 동작합니다.
+          문서 학습 모드에서는 첨부한 자료의 실제 내용과 구조를 기준으로 학습 분량을 나눕니다.
+        </div>
+      </div>
+
+      <div class="progress-box" id="progressBox">
+        <div class="progress-title" id="progressTitle">리서치 준비 중</div>
+        <div class="progress-sub" id="progressSub"></div>
+        <div class="research-meta">
+          <span class="research-pill" id="researchStatusPill">대기</span>
+          <span class="research-pill" id="researchElapsedPill">0초</span>
+          <span class="research-pill">Deep Research 미사용</span>
+        </div>
+      </div>
+      <div class="api-status" id="aiStatus"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="secondary-btn" data-close="aiModal">취소</button>
+      <button class="primary-btn" id="generateBtn"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">✨ 이번 주 생성</span></button>
+    </div>
+  </div>
+</div>
+
+
+<!-- READ-ONLY DETAIL MODAL -->
+<div class="modal-backdrop" id="detailModal">
+  <div class="modal xlarge">
+    <div class="modal-header">
+      <div class="modal-title">뉴스 상세</div>
+      <button class="modal-close" data-close="detailModal">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="detailCardId">
+      <div class="detail-hero">
+        <div class="detail-meta" id="detailMeta"></div>
+        <div class="detail-title" id="detailTitle"></div>
+      </div>
+      <div class="detail-section" id="studyRangeSection" style="display:none">
+        <div class="detail-label">학습 범위</div>
+        <div class="detail-text" id="detailStudyRange"></div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-label" id="detailSummaryLabel">핵심 내용</div>
+        <div class="detail-text" id="detailSummary"></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label" id="detailWhyLabel">왜 중요한가</div>
+        <div class="detail-text" id="detailWhy"></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label" id="detailOutlookLabel">전망 · 영향</div>
+        <div class="detail-text" id="detailOutlook"></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label" id="detailWatchLabel">관전 포인트</div>
+        <ul class="detail-list" id="detailWatchpoints"></ul>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label" id="detailSourcesLabel">출처</div>
+        <div class="detail-sources" id="detailSources"></div>
+      </div>
+      <div class="detail-section" id="deepSection" style="display:none">
+        <div class="detail-label">🔍 심층 분석</div>
+        <div class="content-box" id="detailDeepAnalysis"></div>
+      </div>
+      <div class="detail-section" id="scriptSection" style="display:none">
+        <div class="detail-label">▶ 유튜브 스크립트</div>
+        <div class="content-box" id="detailYoutubeScript"></div>
+      </div>
+      <div class="action-status" id="detailActionStatus"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="secondary-btn" id="deepResearchBtn"><span class="btn-spinner"></span><span class="btn-label">🔍 심층 분석</span></button>
+      <button class="primary-btn" id="detailYoutubeBtn"><span class="btn-spinner"></span><span class="btn-label">▶ 유튜브 콘텐츠 생성</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- CARD MODAL -->
+<div class="modal-backdrop" id="cardModal">
+  <div class="modal large">
+    <div class="modal-header">
+      <div class="modal-title" id="cardModalTitle">카드</div>
+      <button class="modal-close" data-close="cardModal">×</button>
+    </div>
+
+    <div class="modal-body">
+      <input type="hidden" id="cardId">
+
+      <div class="two-col">
+        <div class="field">
+          <label>사건 / 일정 날짜</label>
+          <select id="cardDate"></select>
+        </div>
+        <div class="field">
+          <label>시간 / 일정</label>
+          <input id="cardTime" placeholder="예: 03:00 KST">
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label>상태</label>
+          <select id="cardStatus">
+            <option value="reported">보도</option>
+            <option value="scheduled">예정</option>
+            <option value="watch">관전</option>
+            <option value="tentative">변동 가능</option>
+            <option value="study">학습</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>중요도</label>
+          <select id="cardImpact">
+            <option value="high">높음</option>
+            <option value="medium">보통</option>
+            <option value="low">낮음</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>제목</label>
+        <input id="cardTitle">
+      </div>
+
+      <div class="field">
+        <label>핵심 내용</label>
+        <textarea id="cardSummary"></textarea>
+      </div>
+
+      <div class="youtube-panel" id="cardYoutubePanel">
+        <div class="field">
+          <label>🎬 유튜브 스크립트</label>
+          <textarea
+            id="cardYoutubeScript"
+            style="min-height:300px"
+            placeholder="아래 '유튜브 콘텐츠 생성' 버튼을 누르면 이 카드의 뉴스·전망·출처를 바탕으로 스크립트를 작성합니다."
+          ></textarea>
+          <div class="youtube-status" id="youtubeStatus"></div>
+        </div>
+      </div>
+
+      <div id="cardAdvancedFields">
+      <div class="field" style="margin-top:16px">
+        <label>왜 중요한가</label>
+        <textarea id="cardWhy"></textarea>
+      </div>
+
+      <div class="field">
+        <label>전망 / 영향</label>
+        <textarea id="cardOutlook"></textarea>
+      </div>
+
+      <div class="field">
+        <label>관전 포인트 — 한 줄에 하나</label>
+        <textarea id="cardWatchpoints"></textarea>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label>대표 출처 게시일</label>
+          <input id="cardSourcePublishedAt" placeholder="예: 2026-08-20">
+        </div>
+        <div class="field">
+          <label>시간 배치 근거</label>
+          <input id="cardTemporalBasis" placeholder="예: 공식 실적발표 일정">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>출처 URL — 한 줄에 하나</label>
+        <textarea id="cardSources"></textarea>
+      </div>
+      </div>
+
+      <div class="field" id="cardDeepAnalysisField">
+        <label>심층 분석 결과</label>
+        <textarea id="cardDeepAnalysis" style="min-height:180px"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="danger-btn" id="deleteCardBtn" style="margin-right:auto;display:none">삭제</button>
+      <button class="secondary-btn" data-close="cardModal">취소</button>
+      <button class="secondary-btn" id="youtubeGenerateBtn">▶ 유튜브 콘텐츠 생성</button>
+      <button class="primary-btn" id="saveCardBtn">저장</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MENU ADD MODAL -->
+<div class="modal-backdrop" id="menuModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">＋ 메뉴 추가</div>
+      <button class="modal-close" data-close="menuModal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="two-col">
+        <div class="field">
+          <label>아이콘</label>
+          <input id="menuIconInput" value="📌" maxlength="4">
+        </div>
+        <div class="field">
+          <label>메뉴 제목</label>
+          <input id="menuTitleInput" placeholder="예: 영어회화 · 투자공부 · 교육정책">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>AI에게 요청할 내용</label>
+        <textarea
+          id="menuPromptInput"
+          style="min-height:180px"
+          placeholder="이 메뉴에서 AI 채우기를 눌렀을 때 기본으로 사용할 조사·학습 요청을 작성하세요."
+        ></textarea>
+        <div class="field-help">
+          별도의 코딩 없이 이 문장이 해당 메뉴의 기본 AI 지침이 됩니다.
+          문서를 첨부하면 이 지침은 학습 목표·난이도·방식에 대한 추가 조건으로 사용됩니다.
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="secondary-btn" data-close="menuModal">취소</button>
+      <button class="primary-btn" id="saveMenuBtn">메뉴 추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙ AI · 계정 설정</div>
+      <button class="modal-close" data-close="settingsModal">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="account-card">
+        <div class="account-row">
+          <img class="account-avatar" id="settingsAvatar" alt="">
+          <div class="account-main">
+            <div class="account-name" id="settingsUserName">Google 로그인 필요</div>
+            <div class="account-email" id="settingsUserEmail"></div>
+          </div>
+          <button class="secondary-btn" id="supabaseLogoutBtn">로그아웃</button>
+        </div>
+      </div>
+
+      <div class="secure-key-card">
+        <div class="secure-key-head">
+          <div>
+            <div class="secure-key-title">🔐 내 Gemini API Key</div>
+            <div class="field-help" style="margin-top:3px">사용자별로 암호화해 Supabase에 저장합니다.</div>
+          </div>
+          <span class="key-status-pill" id="aiKeyStatus">확인 중</span>
+        </div>
+
+        <div class="field" style="margin-bottom:8px">
+          <input id="apiKeyInput" type="password" placeholder="새 API Key를 입력하면 등록/변경됩니다.">
+          <div class="secure-notice">
+            API Key 원문은 브라우저 localStorage와 일반 DB 컬럼에 저장하지 않습니다.
+            Edge Function에서 검증한 뒤 서버 측에서 암호화하여 보관합니다.
+          </div>
+        </div>
+
+        <div class="key-actions">
+          <button class="primary-btn" id="saveAiKeyBtn">API Key 저장 / 변경</button>
+          <button class="secondary-btn" id="testApiBtn">등록된 Key 테스트</button>
+          <button class="danger-btn" id="deleteAiKeyBtn">API Key 삭제</button>
+        </div>
+      </div>
+
+      <div class="model-grid">
+        <div class="model-card">
+          <div class="model-card-title">① 빠른 주간 브리핑 모델</div>
+          <div class="model-card-desc">AI 채우기에서 Google Search + URL Context로 빠르게 조사하고 카드를 구성합니다.</div>
+          <select id="analysisModelInput">
+            <option value="gemini-3.7-flash">Gemini 3.7 Flash — 권장</option>
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash — 구형 호환</option>
+          </select>
+        </div>
+
+        <div class="model-card">
+          <div class="model-card-title">② 선택 카드 심층 분석 에이전트</div>
+          <div class="model-card-desc">카드 상세 화면에서 사용자가 심층 분석을 누를 때만 실행합니다.</div>
+          <select id="researchAgentInput">
+            <option value="deep-research-preview-04-2026">Deep Research — 일반</option>
+            <option value="deep-research-max-preview-04-2026">Deep Research Max — 최대 심층</option>
+          </select>
+        </div>
+
+        <div class="model-card">
+          <div class="model-card-title">③ 유튜브 콘텐츠 작성 모델</div>
+          <div class="model-card-desc">카드와 원본 문서·출처를 바탕으로 런빌드 규칙의 한국어 스크립트를 작성합니다.</div>
+          <select id="youtubeModelInput">
+            <option value="gemini-3.7-flash">Gemini 3.7 Flash — 권장</option>
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash — 구형 호환</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-divider">
+        <div class="settings-section-title">☁ 내 클라우드 데이터</div>
+        <div class="settings-section-desc">
+          Google 로그인 사용자 ID를 기준으로 메뉴, 카드, 문서, 스크립트를 분리합니다.
+          다른 사용자의 데이터는 RLS 정책으로 접근할 수 없습니다.
+        </div>
+      </div>
+
+      <div class="supabase-auth-actions">
+        <button class="secondary-btn" id="pushCloudBtn">↑ 현재 자료 저장</button>
+        <button class="secondary-btn" id="pullCloudBtn">↓ 클라우드 새로고침</button>
+      </div>
+
+      <div class="cloud-status" id="supabaseStatus">로그인 상태를 확인하고 있습니다.</div>
+
+      <div class="legacy-box" id="legacyImportBox">
+        이 브라우저에서 V6 이전 로컬 자료를 발견했습니다.
+        현재 Google 계정의 클라우드 공간으로 한 번 가져올 수 있습니다.
+        <div class="key-actions">
+          <button class="secondary-btn" id="importLegacyBtn">기존 로컬 자료 가져오기</button>
+        </div>
+      </div>
+
+      <div class="api-status" id="settingsStatus"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="primary-btn" id="saveSettingsBtn">모델 설정 저장</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==========================================================
+   1. CHANNEL CONFIG
+========================================================== */
+const DEFAULT_CHANNELS = {
+  society:{
+    icon:"🌐",label:"사회 이슈",title:"사회 이슈",
+    desc:"정책·정치·사법·노동·사회 변화의 핵심 뉴스와 예정 일정을 추적합니다.",
+    prompt:`
+한국을 중심으로 정치, 정부 정책, 국회, 법원, 주요 사회 갈등, 노동, 인구, 주거, 복지, 안전 관련 핵심 이슈를 조사한다.
+이미 발생한 뉴스뿐 아니라 이번 주 국회 일정, 정부 발표, 주요 재판, 정책 시행, 중요한 사회적 이벤트도 확인한다.
+단순 기사 나열이 아니라 왜 중요한지, 향후 정책·사회에 어떤 영향을 미칠지 분석한다.`
+  },
+  ai:{
+    icon:"🤖",label:"AI & 첨단 기술",title:"AI & 첨단 기술",
+    desc:"AI 모델·로봇·반도체·양자·첨단기술의 발표와 변화를 추적합니다.",
+    prompt:`
+OpenAI, Google, Anthropic, Meta, Microsoft, NVIDIA, xAI, Apple, Tesla 등 주요 기업과 연구기관의 AI 및 첨단기술을 조사한다.
+새 AI 모델, 에이전트, 로봇, 반도체, 양자컴퓨팅, 생성형 미디어 발표와 업데이트를 포함한다.
+이번 주 남은 기간의 제품 발표, 개발자 행사, 콘퍼런스, 실적 발표, 공식 브리핑도 확인한다.
+벤치마크 숫자만 전달하지 말고 실제 사용자·기업·개발자에게 무엇이 달라지는지 분석한다.`
+  },
+  macro:{
+    icon:"📈",label:"증시 & 매크로 경제",title:"증시 & 매크로 경제",
+    desc:"증시·금리·환율·경제지표·기업 실적과 향후 시장 변수를 정리합니다.",
+    prompt:`
+한국과 미국 증시를 중심으로 거시경제와 시장 일정을 조사한다.
+FOMC, 연준 인사 발언, CPI, PPI, PCE, 고용보고서, 실업수당, GDP, 한국은행, ECB, BOJ, 채권금리, 환율, 유가를 확인한다.
+삼성전자, SK하이닉스, NVIDIA, Microsoft, Alphabet, Amazon, Apple, Tesla 등 시장 영향력이 큰 기업의 실적 및 주요 발표 일정도 확인한다.
+이미 나온 경제지표는 실제 시장 반응을 분석하고, 아직 남아 있는 이번 주 일정은 시장 예상, 핵심 관전 포인트, 결과가 예상보다 높거나 낮을 때 증시에 미칠 수 있는 영향을 설명한다.
+확정되지 않은 FOMC나 실적 날짜는 추측하지 않는다.`
+  },
+  education:{
+    icon:"🏫",label:"학교·미래 교육",title:"학교·미래 교육",
+    desc:"교육정책·AI교육·입시·에듀테크와 학교 현장의 변화를 추적합니다.",
+    prompt:`
+교육부, 시도교육청, 국회 교육위원회, 대학입시, AI교육, 에듀테크, 디지털 교육, 교원정책, 학생 평가와 미래교육 정책을 조사한다.
+이번 주 이미 발표된 정책뿐 아니라 교육부 발표 예정, 교육청 정책 행사, 입시 일정, 공청회, 교원 연수, 주요 교육 행사를 확인한다.
+학교 현장에서 교사와 학생에게 실제로 무엇이 바뀌는지를 가장 중요하게 설명한다.`
+  },
+  productivity:{
+    icon:"⚡",label:"생산성 & 실전 AI활용 팁",title:"생산성 & 실전 AI활용 팁",
+    desc:"새로운 AI 기능과 실제 업무에 바로 적용할 활용법을 정리합니다.",
+    prompt:`
+ChatGPT, Gemini, Claude, NotebookLM, Perplexity, Canva, Gamma, 영상·이미지·음성 AI, AI 자동화 및 생산성 도구의 최신 기능을 조사한다.
+단순 업데이트 소식이 아니라 이번 주 공개된 기능을 실제로 어떻게 활용하면 좋은지 설명한다.
+교사, 직장인, 크리에이터, 1인 사업자, 개발자가 바로 따라할 수 있는 구체적 활용 예시를 포함한다.
+이번 주 예정된 주요 기능 출시, 웨비나, 개발사 발표도 확인한다.`
+  },
+  developer:{
+    icon:"💻",label:"개발자 & 테크니컬 트렌드",title:"개발자 & 테크니컬 트렌드",
+    desc:"API·에이전트·개발도구·오픈소스·클라우드 기술 흐름을 추적합니다.",
+    prompt:`
+AI 개발자와 소프트웨어 개발자가 알아야 할 기술 변화와 개발 생태계를 조사한다.
+Gemini API, OpenAI API, Anthropic API, MCP, Agent SDK, Codex, Claude Code, GitHub, VS Code, Vercel, Firebase, Cloudflare, Supabase, React, Next.js 등을 포함한다.
+새 API, SDK, 모델, 가격 변경, deprecated 기능, 보안 이슈, 오픈소스 프로젝트, 개발자 행사와 릴리스 일정을 조사한다.
+단순 뉴스가 아니라 기존 개발 방식이 어떻게 바뀌는지, 지금 배우거나 적용할 가치가 있는지를 분석한다.`
+  }
+};
+
+function cloneDefaultChannels(){
+  return structuredClone(DEFAULT_CHANNELS);
+}
+
+/* ==========================================================
+   2. STATE + MIGRATION
+========================================================== */
+const LEGACY_STORAGE_KEY = "AI_WEEKLY_INTELLIGENCE_V2";
+const USER_STORAGE_PREFIX = "AI_WEEKLY_INTELLIGENCE_V7_USER_";
+const SCHEMA_VERSION = 7;
+
+const SUPABASE_URL = "https://uundurvrpouvdsoyyreb.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9RvgR3BVRGB-4oU-iFYQgw_abV5VMJm";
+const SUPABASE_BUCKET = "weekly-documents";
+const AI_EDGE_FUNCTION = "awi-ai";
+
+const defaultState = {
+  schemaVersion:SCHEMA_VERSION,
+  channel:"society",
+  channels:cloneDefaultChannels(),
+  boards:{},
+  sources:{},
+  prompts:{},
+  settings:{
+    researchAgent:"deep-research-preview-04-2026",
+    analysisModel:"gemini-3.7-flash",
+    youtubeModel:"gemini-3.7-flash",
+    supabaseUrl:SUPABASE_URL,
+    supabasePublishableKey:SUPABASE_PUBLISHABLE_KEY,
+    supabaseBucket:SUPABASE_BUCKET
+  }
+};
+
+function normalizeSavedState(saved){
+  try{
+    saved=saved||{};
+    const oldSettings=saved.settings||{};
+    let legacyModel=oldSettings.analysisModel||oldSettings.model||"gemini-3.7-flash";
+    if((saved.schemaVersion||0)<3 && legacyModel==="gemini-2.5-flash"){
+      legacyModel="gemini-3.7-flash";
+    }
+
+    const migratedChannels=saved.channels?structuredClone(saved.channels):cloneDefaultChannels();
+    for(const [key,prompt] of Object.entries(saved.prompts||{})){
+      if(migratedChannels[key]&&prompt)migratedChannels[key].prompt=prompt;
+    }
+
+    return {
+      ...structuredClone(defaultState),
+      channel:saved.channel||"society",
+      channels:migratedChannels,
+      boards:structuredClone(saved.boards||{}),
+      sources:structuredClone(saved.sources||{}),
+      prompts:structuredClone(saved.prompts||{}),
+      settings:{
+        ...structuredClone(defaultState.settings),
+        researchAgent:oldSettings.researchAgent||"deep-research-preview-04-2026",
+        analysisModel:oldSettings.analysisModel||legacyModel,
+        youtubeModel:oldSettings.youtubeModel||legacyModel,
+        supabaseUrl:SUPABASE_URL,
+        supabasePublishableKey:SUPABASE_PUBLISHABLE_KEY,
+        supabaseBucket:SUPABASE_BUCKET
+      },
+      schemaVersion:SCHEMA_VERSION
+    };
+  }catch(error){
+    console.error(error);
+    return structuredClone(defaultState);
+  }
+}
+
+function readLocalJson(key){
+  try{
+    const raw=localStorage.getItem(key);
+    return raw?JSON.parse(raw):null;
+  }catch(error){
+    console.warn("로컬 저장 데이터 읽기 실패",error);
+    return null;
+  }
+}
+
+const legacyRawState=readLocalJson(LEGACY_STORAGE_KEY);
+const legacyStateCandidate=legacyRawState?normalizeSavedState(legacyRawState):null;
+let legacyLocalApiKey=String(legacyRawState?.settings?.apiKey||"").trim();
+
+function userStorageKey(userId){return `${USER_STORAGE_PREFIX}${userId}`}
+
+function loadUserCachedState(userId){
+  const raw=readLocalJson(userStorageKey(userId));
+  return raw?normalizeSavedState(raw):null;
+}
+
+function hasMeaningfulStateData(s){
+  if(!s)return false;
+  const boardCount=Object.values(s.boards||{}).reduce((sum,weeks)=>
+    sum+Object.values(weeks||{}).reduce((n,cards)=>n+(cards?.length||0),0),0);
+  const sourceCount=Object.values(s.sources||{}).reduce((sum,arr)=>sum+(arr?.length||0),0);
+  const customMenu=Object.keys(s.channels||{}).some(k=>k.startsWith("custom_"));
+  return boardCount>0||sourceCount>0||customMenu;
+}
+
+let state=structuredClone(defaultState);
+let currentWeekStart=getMonday(new Date());
+let attachedFilesByChannel={};
+
+/* Supabase / multi-user runtime */
+let supabaseClient=null;
+let supabaseUser=null;
+let storedDocumentsByChannel={};
+let remoteSyncTimer=null;
+let suppressRemoteSync=false;
+let remoteSyncBusy=false;
+let cloudHydrated=false;
+let authInitializing=false;
+
+/* Secure BYOK runtime: the actual API key is never stored here. */
+let aiKeyReady=false;
+let aiKeyMeta=null;
+
+function saveState(){
+  state.schemaVersion=SCHEMA_VERSION;
+  state.settings.supabaseUrl=SUPABASE_URL;
+  state.settings.supabasePublishableKey=SUPABASE_PUBLISHABLE_KEY;
+  state.settings.supabaseBucket=SUPABASE_BUCKET;
+
+  if(supabaseUser){
+    localStorage.setItem(userStorageKey(supabaseUser.id),JSON.stringify(state));
+  }
+
+  if(!suppressRemoteSync&&cloudHydrated&&isSupabaseReady()){
+    scheduleSupabaseSync();
+  }
+}
+
+function clearLegacyApiKeyFromBrowser(){
+  legacyLocalApiKey="";
+  try{
+    const raw=readLocalJson(LEGACY_STORAGE_KEY);
+    if(raw?.settings){
+      raw.settings.apiKey="";
+      raw.settings.rememberKey=false;
+      localStorage.setItem(LEGACY_STORAGE_KEY,JSON.stringify(raw));
+    }
+  }catch(error){
+    console.warn(error);
+  }
+}
+
+/* ==========================================================
+   3. DATE
+========================================================== */
+function getMonday(date){
+  const d=new Date(date); d.setHours(0,0,0,0);
+  const day=d.getDay();
+  d.setDate(d.getDate()+(day===0?-6:1-day));
+  return d;
+}
+function addDays(date,count){const d=new Date(date);d.setDate(d.getDate()+count);return d}
+function dateKey(date){
+  const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,"0"),d=String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
+function weekKey(){return dateKey(currentWeekStart)}
+function weekDays(){return Array.from({length:7},(_,i)=>addDays(currentWeekStart,i))}
+function sameDay(a,b){
+  return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+}
+const dayNames=["월","화","수","목","금","토","일"];
+
+/* ==========================================================
+   4. DATA
+========================================================== */
+function ensureBoard(){
+  state.boards[state.channel] ||= {};
+  state.boards[state.channel][weekKey()] ||= [];
+}
+function getCards(){ensureBoard();return state.boards[state.channel][weekKey()]}
+function currentSources(){state.sources[state.channel] ||= [];return state.sources[state.channel]}
+function currentFiles(){attachedFilesByChannel[state.channel] ||= [];return attachedFilesByChannel[state.channel]}
+function currentStoredDocuments(){storedDocumentsByChannel[state.channel] ||= [];return storedDocumentsByChannel[state.channel]}
+function currentChannel(){
+  if(!state.channels[state.channel]){
+    const first=Object.keys(state.channels)[0];
+    if(first) state.channel=first;
+  }
+  return state.channels[state.channel] || {icon:"📌",label:"메뉴",title:"메뉴",desc:"",prompt:""};
+}
+function isStudyMode(){return currentFiles().length>0 || currentStoredDocuments().length>0}
+
+/* ==========================================================
+   5. HEADER / TABS
+========================================================== */
+function renderTabs(){
+  const el=document.getElementById("categoryTabs");el.innerHTML="";
+
+  Object.entries(state.channels).forEach(([key,c])=>{
+    const b=document.createElement("button");
+    b.className="category-tab"+(state.channel===key?" active":"");
+    b.innerHTML=`<span>${escapeHtml(c.icon||"📌")} ${escapeHtml(c.label||c.title||"메뉴")}</span><span class="tab-delete" title="메뉴 삭제">×</span>`;
+
+    b.onclick=e=>{
+      if(e.target.closest(".tab-delete")){
+        e.stopPropagation();
+        deleteMenu(key);
+        return;
+      }
+      state.channel=key;
+      saveState();
+      renderAll();
+    };
+    el.appendChild(b);
+  });
+
+  const add=document.createElement("button");
+  add.className="category-add";
+  add.textContent="+";
+  add.title="메뉴 추가";
+  add.onclick=openMenuModal;
+  el.appendChild(add);
+}
+
+function renderHeading(){
+  const c=currentChannel();
+  document.getElementById("boardHeading").textContent=`${c.icon||"📌"} ${c.title||c.label}`;
+  document.getElementById("boardDesc").textContent=
+    isStudyMode()
+      ? "📚 첨부 문서를 기반으로 한 주간 학습 TODO를 구성합니다."
+      : (c.desc || "사용자 정의 주간 AI 보드");
+  const days=weekDays(),a=days[0],b=days[6];
+  document.getElementById("weekTitle").textContent=
+    `${a.getFullYear()}.${String(a.getMonth()+1).padStart(2,"0")}.${String(a.getDate()).padStart(2,"0")} ~ ${String(b.getMonth()+1).padStart(2,"0")}.${String(b.getDate()).padStart(2,"0")}`;
+  const aiBtn=document.getElementById("aiFillBtn");
+  aiBtn.textContent=isStudyMode()
+    ? "📚 학습 계획 생성"
+    : (getCards().length?"✨ 이번 주 업데이트":"✨ AI 채우기");
+}
+
+/* ==========================================================
+   6. BOARD
+========================================================== */
+const statusConfig={
+  reported:{label:"보도",color:"#4d8aff"},
+  scheduled:{label:"예정",color:"#ff5068"},
+  watch:{label:"관전",color:"#8a62e8"},
+  tentative:{label:"변동 가능",color:"#ffbd42"},
+  study:{label:"학습",color:"#2fc785"}
+};
+const impactLabels={high:"중요",medium:"보통",low:"참고"};
+
+function renderBoard(){
+  ensureBoard();
+  const board=document.getElementById("board");board.innerHTML="";
+  const cards=getCards(),today=new Date();
+
+  weekDays().forEach((date,index)=>{
+    const key=dateKey(date);
+    const column=document.createElement("section");
+    column.className="day-column"+(sameDay(date,today)?" today":"");
+
+    const header=document.createElement("div");
+    header.className="day-header";
+    header.innerHTML=`
+      <div><div class="day-name">${dayNames[index]}요일</div><div class="day-date">${date.getMonth()+1}/${date.getDate()}</div></div>
+      <button class="day-add">+</button>`;
+    header.querySelector(".day-add").onclick=()=>openCardModal(null,key);
+
+    const list=document.createElement("div");
+    list.className="card-list";list.dataset.date=key;
+    list.addEventListener("dragover",e=>{e.preventDefault();list.classList.add("drag-over")});
+    list.addEventListener("dragleave",()=>list.classList.remove("drag-over"));
+    list.addEventListener("drop",e=>{
+      e.preventDefault();list.classList.remove("drag-over");
+      moveCard(e.dataTransfer.getData("cardId"),key);
+    });
+
+    const dayCards=cards.filter(x=>x.dateKey===key).sort((a,b)=>importanceScore(b.impact)-importanceScore(a.impact));
+
+    if(!dayCards.length){
+      const empty=document.createElement("div");
+      empty.className="empty";
+      empty.innerHTML="주요 일정 없음<br>AI 채우기로 이번 주 정보를 조사할 수 있습니다.";
+      list.appendChild(empty);
+    }else{
+      dayCards.forEach(card=>list.appendChild(createCard(card)));
+    }
+
+    column.appendChild(header);column.appendChild(list);board.appendChild(column);
+  });
+}
+function importanceScore(v){return {high:3,medium:2,low:1}[v]||1}
+
+function createCard(card){
+  const status=statusConfig[card.status]||statusConfig.reported;
+  const el=document.createElement("article");
+  el.className="board-card";el.style.setProperty("--accent",status.color);el.draggable=true;
+
+  el.innerHTML=`
+    <div class="card-top">
+      <div class="card-badges">
+        <span class="badge status-${card.status}">${status.label}</span>
+        ${card.timeLabel?`<span class="badge">${escapeHtml(card.timeLabel)}</span>`:""}
+        <span class="badge impact-${card.impact||"medium"}">${impactLabels[card.impact]||"보통"}</span>
+        ${card.deepAnalysis?`<span class="badge deep-ready">심층</span>`:""}
+        ${card.youtubeScript?`<span class="badge script-ready">▶ 스크립트</span>`:""}
+      </div>
+    </div>
+    <div class="card-title">${escapeHtml(card.title)}</div>
+    <button class="card-menu" title="수정">•••</button>`;
+
+  el.addEventListener("dragstart",e=>e.dataTransfer.setData("cardId",card.id));
+  el.addEventListener("click",()=>openDetailModal(card.id));
+  el.querySelector(".card-menu").onclick=e=>{e.stopPropagation();openCardModal(card)};
+  return el;
+}
+
+function moveCard(id,newDate){
+  const card=getCards().find(x=>x.id===id);if(!card)return;
+  card.dateKey=newDate;saveState();renderBoard();
+}
+
+
+/* ==========================================================
+   6B. READ-ONLY DETAIL
+========================================================== */
+function openDetailModal(cardId){
+  const card=getCards().find(x=>x.id===cardId);if(!card)return;
+  document.getElementById("detailCardId").value=cardId;
+
+  const study=card.mode==="study";
+  document.querySelector("#detailModal .modal-title").textContent=study?"학습 TODO 상세":"뉴스 상세";
+  document.getElementById("studyRangeSection").style.display=study?"block":"none";
+  document.getElementById("detailStudyRange").textContent=card.studyRange||"문서의 내용 구조를 기준으로 배정";
+  document.getElementById("detailSummaryLabel").textContent=study?"핵심 내용":"핵심 내용";
+  document.getElementById("detailWhyLabel").textContent=study?"학습 목표":"왜 중요한가";
+  document.getElementById("detailOutlookLabel").textContent=study?"학습 활동 · 복습":"전망 · 영향";
+  document.getElementById("detailWatchLabel").textContent=study?"핵심 체크포인트":"관전 포인트";
+  document.getElementById("detailSourcesLabel").textContent=study?"참고 문서":"출처";
+  const s=statusConfig[card.status]||statusConfig.reported;
+  document.getElementById("detailMeta").innerHTML=`
+    <span class="badge status-${card.status}">${s.label}</span>
+    <span class="badge">${escapeHtml(card.dateKey||"")}</span>
+    ${card.timeLabel?`<span class="badge">${escapeHtml(card.timeLabel)}</span>`:""}
+    <span class="badge impact-${card.impact||"medium"}">${impactLabels[card.impact]||"보통"}</span>
+    ${card.sourcePublishedAt?`<span class="badge">출처 게시 ${escapeHtml(card.sourcePublishedAt)}</span>`:""}`;
+  document.getElementById("detailTitle").textContent=card.title||"";
+  document.getElementById("detailSummary").textContent=card.summary||"내용 없음";
+  document.getElementById("detailWhy").textContent=card.whyImportant||"내용 없음";
+  document.getElementById("detailOutlook").textContent=card.outlook||"내용 없음";
+
+  const w=document.getElementById("detailWatchpoints");w.innerHTML="";
+  (card.watchpoints||[]).forEach(x=>{const li=document.createElement("li");li.textContent=x;w.appendChild(li)});
+  if(!(card.watchpoints||[]).length){const li=document.createElement("li");li.textContent="등록된 관전 포인트가 없습니다.";w.appendChild(li)}
+
+  renderDetailSources(card);
+  renderDetailGenerated(card);
+  setDetailStatus("");
+  resetLoadingButton("deepResearchBtn","🔍 심층 분석");
+  resetLoadingButton("detailYoutubeBtn","▶ 유튜브 콘텐츠 생성");
+  document.getElementById("deepResearchBtn").style.display=study?"none":"inline-flex";
+  document.getElementById("detailYoutubeBtn").style.display="inline-flex";
+  showModal("detailModal");
+}
+
+function renderDetailSources(card){
+  const el=document.getElementById("detailSources");el.innerHTML="";
+
+  if(card.mode==="study" && Array.isArray(card.sourceFiles) && card.sourceFiles.length){
+    card.sourceFiles.forEach(name=>{
+      const span=document.createElement("span");
+      span.className="detail-file";
+      span.textContent=`📄 ${name}`;
+      el.appendChild(span);
+    });
+    return;
+  }
+
+  (card.sourceUrls||[]).filter(validHttpUrl).forEach(url=>{
+    const a=document.createElement("a");
+    a.href=url;a.target="_blank";a.rel="noopener noreferrer";
+    a.className="detail-source";a.textContent=domainName(url);
+    el.appendChild(a);
+  });
+  if(!(card.sourceUrls||[]).length)el.textContent="등록된 출처가 없습니다.";
+}
+
+function renderDetailGenerated(card){
+  const deep=document.getElementById("deepSection"),script=document.getElementById("scriptSection");
+  if(card.deepAnalysis){deep.style.display="block";document.getElementById("detailDeepAnalysis").textContent=card.deepAnalysis}else deep.style.display="none";
+  if(card.youtubeScript){script.style.display="block";document.getElementById("detailYoutubeScript").textContent=card.youtubeScript}else script.style.display="none";
+}
+
+function setDetailStatus(text,type=""){
+  const el=document.getElementById("detailActionStatus");el.textContent=text;el.className=`action-status ${type}`;
+}
+
+function setLoadingButton(id,on,label){
+  const btn=document.getElementById(id),labelEl=btn.querySelector(".btn-label");
+  btn.disabled=on;btn.classList.toggle("loading",on);if(labelEl)labelEl.textContent=label;
+}
+function resetLoadingButton(id,label){setLoadingButton(id,false,label)}
+
+/* ==========================================================
+   7. CARD EDIT + YOUTUBE SCRIPT
+========================================================== */
+function openCardModal(card=null,defaultDate=null){
+  const dateSelect=document.getElementById("cardDate");dateSelect.innerHTML="";
+  weekDays().forEach((d,i)=>{
+    const option=document.createElement("option");
+    option.value=dateKey(d);option.textContent=`${d.getMonth()+1}/${d.getDate()} ${dayNames[i]}요일`;
+    dateSelect.appendChild(option);
+  });
+
+  document.getElementById("cardId").value=card?.id||"";
+  dateSelect.value=card?.dateKey||defaultDate||weekKey();
+  document.getElementById("cardTime").value=card?.timeLabel||"";
+  document.getElementById("cardStatus").value=card?.status||"reported";
+  document.getElementById("cardImpact").value=card?.impact||"medium";
+  document.getElementById("cardTitle").value=card?.title||"";
+  document.getElementById("cardSummary").value=card?.summary||"";
+  document.getElementById("cardYoutubeScript").value=card?.youtubeScript||"";
+  document.getElementById("cardWhy").value=card?.whyImportant||"";
+  document.getElementById("cardOutlook").value=card?.outlook||"";
+  document.getElementById("cardWatchpoints").value=(card?.watchpoints||[]).join("\n");
+  document.getElementById("cardSourcePublishedAt").value=card?.sourcePublishedAt||"";
+  document.getElementById("cardTemporalBasis").value=card?.temporalBasis||"";
+  document.getElementById("cardSources").value=(card?.sourceUrls||[]).join("\n");
+  document.getElementById("cardDeepAnalysis").value=card?.deepAnalysis||"";
+  document.getElementById("youtubeStatus").textContent="";
+  document.getElementById("youtubeStatus").className="youtube-status";
+
+  // 입력 화면 단순화
+  // 직접 카드 추가: 날짜/시간/상태/중요도/제목/핵심내용/유튜브 스크립트만 표시
+  // AI 생성 카드: 고급 정보는 표시하되, 빈 심층분석/유튜브 스크립트 영역은 숨김
+  const isNewCard=!card;
+  const youtubePanel=document.getElementById("cardYoutubePanel");
+  const advancedFields=document.getElementById("cardAdvancedFields");
+  const deepField=document.getElementById("cardDeepAnalysisField");
+
+  advancedFields.style.display=isNewCard?"none":"block";
+  deepField.style.display=(!isNewCard && !!card?.deepAnalysis)?"block":"none";
+  youtubePanel.style.display=(isNewCard || !!card?.deepAnalysis || !!card?.youtubeScript)?"block":"none";
+
+  document.getElementById("cardModalTitle").textContent=card?(card.mode==="study"?"학습 카드 수정":"뉴스 카드 수정"):"카드 추가";
+  document.getElementById("deleteCardBtn").style.display=card?"inline-block":"none";
+  showModal("cardModal");
+}
+
+function readCardForm(){
+  const title=document.getElementById("cardTitle").value.trim();
+  const existingId=document.getElementById("cardId").value;
+  const existing=existingId?getCards().find(x=>x.id===existingId):null;
+  return {
+    mode:existing?.mode||"manual",
+    studyRange:existing?.studyRange||"",
+    sourceFiles:existing?.sourceFiles||[],
+    documentIds:existing?.documentIds||[],
+    id:document.getElementById("cardId").value||crypto.randomUUID(),
+    dateKey:document.getElementById("cardDate").value,
+    timeLabel:document.getElementById("cardTime").value.trim(),
+    status:document.getElementById("cardStatus").value,
+    impact:document.getElementById("cardImpact").value,
+    title,
+    summary:document.getElementById("cardSummary").value.trim(),
+    youtubeScript:document.getElementById("cardYoutubeScript").value.trim(),
+    whyImportant:document.getElementById("cardWhy").value.trim(),
+    outlook:document.getElementById("cardOutlook").value.trim(),
+    watchpoints:splitLines(document.getElementById("cardWatchpoints").value),
+    sourcePublishedAt:document.getElementById("cardSourcePublishedAt").value.trim(),
+    temporalBasis:document.getElementById("cardTemporalBasis").value.trim(),
+    sourceUrls:splitLines(document.getElementById("cardSources").value).filter(validHttpUrl),
+    deepAnalysis:document.getElementById("cardDeepAnalysis").value.trim()
+  };
+}
+
+document.getElementById("saveCardBtn").onclick=()=>{
+  const card=readCardForm();
+  if(!card.title){showToast("제목을 입력하세요.");return}
+  const id=document.getElementById("cardId").value;
+  const cards=getCards();
+
+  if(id){
+    const index=cards.findIndex(x=>x.id===id);
+    if(index>=0)cards[index]=card;
+  }else cards.push(card);
+
+  saveState();hideModal("cardModal");renderBoard();
+};
+
+document.getElementById("deleteCardBtn").onclick=async()=>{
+  const id=document.getElementById("cardId").value;
+
+  try{
+    if(isSupabaseReady())await deleteRemoteCardsByIds([id]);
+    state.boards[state.channel][weekKey()]=getCards().filter(x=>x.id!==id);
+    saveState();
+    hideModal("cardModal");
+    renderBoard();
+  }catch(error){
+    console.error(error);
+    showToast(`카드 삭제 실패: ${error.message}`);
+  }
+};
+
+document.getElementById("youtubeGenerateBtn").onclick=async()=>{
+  if(!aiKeyReady){hideModal("cardModal");openSettings();setSettingsStatus("본인의 Gemini API Key를 먼저 등록하세요.","error");return}
+  const card=readCardForm();if(!card.title){showToast("먼저 카드 제목을 입력하세요.");return}
+  const btn=document.getElementById("youtubeGenerateBtn"),statusEl=document.getElementById("youtubeStatus");
+  btn.disabled=true;btn.textContent="▶ 스크립트 생성 중...";statusEl.textContent="최신 사실을 확인하고 스크립트를 작성하고 있습니다...";
+  try{
+    const text=await generateYoutubeScriptForCard(card);
+    document.getElementById("cardYoutubeScript").value=text;
+    document.getElementById("cardYoutubePanel").style.display="block";
+    statusEl.className="youtube-status success";
+    statusEl.textContent="✓ 스크립트를 생성했습니다. 저장하면 카드에 보관됩니다.";
+  }
+  catch(e){statusEl.className="youtube-status error";statusEl.textContent=e.message||"스크립트 생성 오류"}
+  finally{btn.disabled=false;btn.textContent="▶ 유튜브 콘텐츠 생성"}
+};
+
+document.getElementById("detailYoutubeBtn").onclick=async()=>{
+  if(!aiKeyReady){hideModal("detailModal");openSettings();setSettingsStatus("본인의 Gemini API Key를 먼저 등록하세요.","error");return}
+  const id=document.getElementById("detailCardId").value,card=getCards().find(x=>x.id===id);if(!card)return;
+  setLoadingButton("detailYoutubeBtn",true,"스크립트 생성 중");setDetailStatus("최신 사실을 확인하고 유튜브 스크립트를 작성하고 있습니다...");
+  try{card.youtubeScript=await generateYoutubeScriptForCard(card);saveState();renderBoard();renderDetailGenerated(card);setDetailStatus("✓ 유튜브 스크립트를 카드에 저장했습니다.","success")}
+  catch(e){setDetailStatus(e.message||"스크립트 생성 오류","error")}
+  finally{resetLoadingButton("detailYoutubeBtn","▶ 유튜브 콘텐츠 생성")}
+};
+
+const RUNBUILD_YOUTUBE_SYSTEM_PROMPT=`
+당신은 유튜브 채널 "런빌드"의 전속 TTS 스크립트 작가다.
+런빌드는 강의 채널이 아니라 AI·기술·교육·경제·사회 이슈를 실제 사례와 결과 중심으로 이해하고 활용하는 채널이다.
+
+[최우선 원칙]
+규칙이 충돌하면 다음 순서를 따른다.
+1. 사실 정확성 및 최신성
+2. 사용자가 제공한 카드 내용과 명시적 요청
+3. 선택한 콘텐츠 유형의 구조적 일관성
+4. 첫 3~5초 후크의 명확성
+5. 구체적인 사례·비교·실제 결과
+6. 런빌드 채널의 톤과 문체
+7. 목표 분량
+8. 출력 형식
+
+확인하지 못한 사실, 수치, 날짜, 가격, 기능, UI 이름, 제한사항을 추측하지 않는다.
+직접 사용하거나 확인하지 않은 서비스는 "제가 써보니", "직접 테스트해보니"처럼 실제 경험인 것처럼 말하지 않는다.
+숫자·날짜·모델명·성능·정책 일정처럼 틀리면 신뢰도가 크게 떨어지는 정보는 Google Search와 제공된 출처에서 최신 사실을 확인한다.
+가능하면 공식 홈페이지·공식 문서·공식 발표를 우선하고, 그 다음 신뢰할 수 있는 전문 매체를 사용한다.
+
+[콘텐츠 유형 판단]
+대본을 쓰기 전에 아래 A/B/C 중 하나를 내부적으로 판단하되, 유형 이름은 결과에 출력하지 않는다.
+
+A. 튜토리얼 / 만들기
+- 실제 사용법, 제작법, 업무 활용법, AI 활용 팁이 중심인 경우
+- 실제 제작·시연이 전체의 50% 이상이 되게 한다.
+- 핵심 흐름은 "사용자가 무엇을 입력한다 → 화면에서 무엇을 누르거나 확인한다 → 어떤 결과가 나온다 → 그 결과를 다음 단계에서 다시 사용한다"이다.
+- 프롬프트 입력이 핵심이라면 시청자가 그대로 복사할 수 있는 실제 프롬프트를 작은따옴표로 제시한다.
+- 확인되지 않은 UI 위치나 버튼명을 추측하지 않는다.
+
+B. 신규 서비스 / 업데이트 소개
+- 새 AI 모델, 신규 서비스, 새 기능, 주요 업데이트가 중심인 경우
+- 흐름은 "무엇인지 → 무엇이 달라졌는지 → 기존 한계와 비교 → 실제 활용 → 주의점 → 효율적 사용" 순서를 기본으로 한다.
+- 실제 테스트·활용 예시는 전체의 약 30~50%를 권장한다.
+
+B 유형의 첫 3~4문장은 반드시 다음 하드 규칙을 따른다.
+첫 문장: 공개·출시 주체 + 정확한 제품·모델명 + 공개·출시 사실을 직접 말한다.
+예: "구글이 새로운 AI 모델 제미나이 3.7 플래시를 공개했습니다."
+두 번째 문장: 단순한 성능 향상이 아니라 가장 큰 구조적 차별점을 즉시 선언한다.
+세 번째~네 번째 문장: 공식 데모 또는 검증된 실제 활용 사례 중 가장 강한 하나를 선공개한다.
+그 뒤에야 기존 방식의 불편, 시장 배경, 왜 중요한지를 설명한다.
+"요즘 AI가 빠르게 발전하고 있습니다", "AI 경쟁이 치열합니다", "이번 모델은 조금 다릅니다" 같은 일반론으로 시작하지 않는다.
+
+C. 비교 / 분석 / 트렌드
+- 기업·시장·정책·교육·기술 흐름, 비교, 전망, 사회 이슈가 중심인 경우
+- 기능 목록보다 비교 기준, 구체적 사건, 실제 결과 차이, 누가 어떤 영향을 받는지를 중심으로 구성한다.
+- 최소 하나 이상의 구체적 사례, 실제 수치 또는 현실적인 적용 상황을 포함한다.
+- 전망을 사실처럼 단정하지 않고 "확인된 사실"과 "가능한 시나리오"를 분리한다.
+
+[후크]
+첫 3~5초의 목적은 분위기를 잡는 것이 아니라 영상 주제와 가치를 즉시 이해시키는 것이다.
+다음 시작은 금지한다.
+- "안녕하세요 런빌드입니다"
+- "오늘은 ~에 대해 알아보겠습니다"
+- "여러분 ~해본 적 있으신가요"
+- 의미 없는 시장·산업 배경 설명
+- 제품명만 던지는 시작
+- 결론을 뒤로 미루는 낚시성 문장
+
+B 유형이 아니라면 첫 문장만 들어도 무엇에 관한 영상인지, 누구 또는 어떤 상황과 관련 있는지, 핵심 결론이나 얻을 결과가 무엇인지 이해되어야 한다.
+후크 뒤 2~4문장으로 근거와 맥락을 짧게 보강하고 도입부 전체는 대략 250~400자 안에서 본론으로 진입한다.
+
+[런빌드 문체]
+친근하고 차분한 설명체를 사용한다.
+전문가가 강단에서 강의하는 느낌보다 시청자 옆에서 같은 화면이나 자료를 보며 같이 이해하는 느낌으로 쓴다.
+TTS로 읽었을 때 자연스럽고 이해하기 쉬운 문장을 사용한다.
+전문 용어는 필요할 때 사용하되 바로 쉬운 말로 풀어준다.
+같은 종결어미를 3번 이상 연속 반복하지 않는다.
+지나치게 짧은 문장을 연달아 나열하지 않는다.
+너무 긴 한 문장에 여러 정보를 억지로 넣지 않는다.
+"이것", "이렇게", "이런 식으로" 같은 지시대명사를 남발하지 말고 실제 대상을 직접 말한다.
+
+다음과 같은 추상적 홍보 문구는 피한다.
+"업무 효율이 극대화됩니다."
+"삶의 질이 올라갑니다."
+"혁명적인 도구입니다."
+"게임 체인저입니다."
+"진짜 비서를 둔 느낌입니다."
+
+가능성을 나열하는 대신 실제 상황과 결과로 설명한다.
+예를 들어 "보고서를 자동으로 만들 수 있습니다"보다 "회의록 파일을 넣고 보고서 형식을 선택하면 제목, 주요 결정사항, 다음 할 일이 한 문서로 정리됩니다"처럼 쓴다.
+
+[구체성]
+기능이나 사건을 여러 개 피상적으로 나열하지 않는다.
+영상에서 가장 중요한 한두 개의 변화, 사례, 비교 기준을 중심축으로 잡고 끝까지 누적해서 설명한다.
+AI 도구나 실전 활용 영상이라면 입력 → 화면 동선 → 결과 → 다음 단계가 보이게 한다.
+시장·정책·사회·교육 분석 영상이라면 사건 → 확인된 결과 → 왜 중요한가 → 영향을 받는 대상 → 앞으로 확인할 변수의 흐름을 유지한다.
+한계나 반론이 실제로 중요한 경우 숨기지 말고 해당 지점에서 자연스럽게 설명한다.
+
+[분량]
+한글 글자수 기준으로 잡는다.
+A 일반 튜토리얼: 약 4,000~4,500자
+B 신규 서비스·업데이트: 약 4,500~5,500자
+C 비교·분석·트렌드: 약 3,800~4,800자
+내용이 부족하다고 기능 수를 억지로 늘리지 말고 핵심 사례, 실제 결과, 비교, 영향, 주의점을 더 구체적으로 설명한다.
+
+[본문 출력 형식]
+결과는 사용자가 그대로 TTS나 편집기에 붙여 넣을 수 있는 순수한 대본 본문만 출력한다.
+다음은 사용하지 않는다.
+- 마크다운 헤딩
+- 볼드·이탤릭
+- 불릿
+- 번호 목록
+- 구분선
+- 타임스탬프
+- "도입부", "본론", "마무리", "[훅]", "[배경]" 같은 구간 제목
+- 대괄호나 소괄호 형태의 연출 지시
+
+주제가 전환될 때 빈 줄 두 개로 단락을 나눈다.
+전체는 대략 10~16개 단락을 권장한다.
+한 단락은 하나의 화면 또는 하나의 설명 흐름으로 쓰기 좋은 분량으로 만든다.
+
+[엔딩]
+마지막에는 영상에서 확인한 핵심 결과나 결론을 한 문장으로 정리한다.
+그 뒤 "런빌드" 채널명을 자연스럽게 포함한 구독 유도 멘트를 넣는다.
+매번 똑같은 고정 문구를 반복하지 말고 주제에 맞게 변주한다.
+
+[최종 자가 검증]
+출력 전에 스스로 확인한다.
+- 첫 1~2문장 안에 주제와 핵심 가치가 명확한가?
+- 신규 모델·서비스라면 첫 문장이 출시 주체 + 제품명 + 출시 사실인가?
+- 신규 모델·서비스라면 두 번째 문장에서 가장 큰 차별점을 말했는가?
+- 신규 모델·서비스라면 세 번째~네 번째 문장 안에 가장 강한 실제 사례가 있는가?
+- 최신 정보와 주요 숫자·날짜가 검증되었는가?
+- 기능 나열보다 구체적 사례와 실제 결과가 많은가?
+- 확인되지 않은 UI나 경험을 지어내지 않았는가?
+- 한계와 주의점을 필요한 위치에서 숨기지 않았는가?
+- TTS용 순수 텍스트 형식을 지켰는가?
+- 마지막에 런빌드 엔딩이 포함되었는가?
+
+하나라도 어긋나면 수정한 뒤 최종 대본만 출력한다.
+`;
+
+async function generateYoutubeScriptForCard(card){
+  const youtubeVideos=(card.sourceUrls||[]).filter(isYouTubeVideo).slice(0,6);
+  const regularUrls=(card.sourceUrls||[]).filter(x=>!isYouTubeVideo(x)).slice(0,20);
+
+  if(card.mode==="study"){
+    const docParts=await buildDocumentParts(card.documentIds||[]);
+
+    if(!docParts.length){
+      throw new Error(
+        "원본 학습 문서를 불러올 수 없습니다. Supabase에 로그인했는지 확인하거나 문서를 다시 첨부하세요."
+      );
+    }
+
+    const prompt=`${RUNBUILD_YOUTUBE_SYSTEM_PROMPT}
+
+이번 콘텐츠는 뉴스 카드가 아니라 첨부 문서를 기반으로 만든 학습 TODO 카드다.
+반드시 원본 첨부 문서를 가장 중요한 사실 근거로 사용한다.
+
+[메뉴]
+${currentChannel().label}
+
+[학습 카드 날짜]
+${card.dateKey}
+
+[학습 주제]
+${card.title}
+
+[원문 학습 범위]
+${card.studyRange||"카드 핵심 내용과 원문 구조를 기준으로 관련 부분을 찾을 것"}
+
+[카드 핵심 내용]
+${card.summary||""}
+
+[학습 목표]
+${card.whyImportant||""}
+
+[학습 활동 · 복습]
+${card.outlook||""}
+
+[핵심 체크포인트]
+${(card.watchpoints||[]).join("\n")||"없음"}
+
+[연결된 원본 문서]
+${(card.sourceFiles||[]).join("\n")||"첨부 문서"}
+
+작성 원칙:
+- 카드의 짧은 요약만 늘려 쓰지 말고, 함께 전달된 원본 문서의 실제 내용을 다시 읽고 해당 학습 주제와 관련된 설명·사례·근거를 충분히 활용한다.
+- 원본 문서에 없는 사실을 임의로 만들어내지 않는다.
+- 외부 웹 정보는 원문 이해를 돕기 위해 정말 필요한 경우에만 보조적으로 사용하며, 문서와 외부 정보가 충돌하면 이를 숨기지 않는다.
+- 학습 내용을 시청자가 이해하기 좋은 유튜브 콘텐츠로 재구성하되 런빌드 스크립트 규칙을 그대로 적용한다.
+- 결과에는 순수 대본 본문만 출력한다.`;
+
+    const result=await postInteraction({
+      model:state.settings.youtubeModel,
+      input:[{type:"text",text:prompt},...docParts]
+    });
+
+    const resultText=extractLastText(result);
+    if(!resultText)throw new Error("유튜브 스크립트 응답이 비어 있습니다.");
+    return resultText.trim();
+  }
+
+  const prompt=`${RUNBUILD_YOUTUBE_SYSTEM_PROMPT}
+
+아래는 이번 영상의 제작 자료다.
+이 카드와 최신 웹 조사 결과를 바탕으로 위 런빌드 규칙을 적용해 바로 전체 스크립트를 작성한다.
+별도의 영상 방향 3가지를 제안하지 않는다. 사용자가 "유튜브 콘텐츠 생성"을 눌렀으므로 전체 대본 작성 단계로 바로 진행한다.
+
+[현재 분야]
+${currentChannel().label}
+
+[사건 또는 일정 날짜]
+${card.dateKey} ${card.timeLabel||""}
+
+[카드 제목]
+${card.title}
+
+[핵심 내용]
+${card.summary||""}
+
+[왜 중요한가]
+${card.whyImportant||""}
+
+[전망 · 영향]
+${card.outlook||""}
+
+[관전 포인트]
+${(card.watchpoints||[]).join("\n")||"별도 관전 포인트 없음"}
+
+[심층 분석 결과]
+${card.deepAnalysis||"심층 분석 결과 없음. 필요한 핵심 사실은 Google Search와 제공된 출처에서 확인할 것."}
+
+[대표 출처 게시일]
+${card.sourcePublishedAt||"미상"}
+
+[시간 배치 근거]
+${card.temporalBasis||"별도 정보 없음"}
+
+[참고 URL]
+${regularUrls.join("\n")||"별도 URL 없음"}
+
+추가 지시:
+- 카드 제목을 그대로 영상 제목처럼 반복하며 시작하지 말고, 콘텐츠 유형에 맞는 런빌드 후크 규칙을 적용한다.
+- 이 카드가 신규 AI 모델·서비스·기능 출시 소식이면 반드시 B 유형의 신규 소개 하드 규칙을 적용한다.
+- 실전 AI 활용법이나 따라 하기 콘텐츠가 중심이면 A 유형을 적용한다.
+- 경제·증시·정책·교육·사회 이슈·산업 흐름·비교·전망이면 기본적으로 C 유형을 적용한다.
+- 카드의 기존 전망이 최신 사실과 충돌하면 최신 검증 사실을 우선하고, 확인되지 않은 전망은 가능성으로 표현한다.
+- 제공된 YouTube 영상이 있으면 영상 내용을 사실 근거로 활용하되, 영상에서 확인되지 않은 내용을 지어내지 않는다.
+- 결과에는 대본 본문만 출력한다.`;
+
+  const input=[{type:"text",text:prompt},...youtubeVideos.map(uri=>({type:"video",uri}))];
+  const tools=[{type:"google_search"}];
+  if(regularUrls.length)tools.push({type:"url_context"});
+
+  const result=await postInteraction({
+    model:state.settings.youtubeModel,
+    input,
+    tools
+  });
+
+  const resultText=extractLastText(result);
+  if(!resultText)throw new Error("유튜브 스크립트 응답이 비어 있습니다.");
+  return resultText.trim();
+}
+
+/* ==========================================================
+   8. SOURCE MANAGER
+========================================================== */
+function normalizeUrl(value){
+  value=value.trim();if(!value)return "";
+  if(!value.startsWith("http://")&&!value.startsWith("https://"))value="https://"+value;
+  try{
+    const u=new URL(value);if(!["http:","https:"].includes(u.protocol))return "";
+    return u.href;
+  }catch{return ""}
+}
+function validHttpUrl(value){
+  try{const u=new URL(value);return ["http:","https:"].includes(u.protocol)}catch{return false}
+}
+function sourceType(url){
+  const low=url.toLowerCase();
+  if(isYouTubeVideo(url))return "YouTube 영상";
+  if(low.includes("youtube.com")||low.includes("youtu.be"))return "YouTube 채널";
+  if(low.includes("instagram.com"))return "Instagram";
+  if(low.includes("threads.net")||low.includes("threads.com"))return "Threads";
+  if(low.includes("rss")||low.includes("feed")||low.includes(".xml")||low.includes("atom"))return "RSS";
+  return "WEB";
+}
+function isYouTubeVideo(url){
+  try{
+    const u=new URL(url),host=u.hostname.replace(/^www\./,"");
+    if(host==="youtu.be")return true;
+    if(!host.includes("youtube.com"))return false;
+    return u.pathname==="/watch"||u.pathname.startsWith("/shorts/")||u.pathname.startsWith("/live/");
+  }catch{return false}
+}
+function renderSourceList(){
+  const el=document.getElementById("sourceList"),sources=currentSources();el.innerHTML="";
+  if(!sources.length){
+    el.innerHTML=`<div class="source-empty">등록된 소스가 없습니다. → Gemini + Google Search로 공개 웹을 빠르게 조사합니다.</div>`;
+    return;
+  }
+  sources.forEach((url,index)=>{
+    const item=document.createElement("div");item.className="source-item";
+    item.innerHTML=`
+      <span class="source-type">${sourceType(url)}</span>
+      <span class="source-url">${escapeHtml(url)}</span>
+      <button class="source-remove">×</button>`;
+    item.querySelector(".source-remove").onclick=()=>{currentSources().splice(index,1);saveState();renderSourceList()};
+    el.appendChild(item);
+  });
+}
+function addSource(){
+  const input=document.getElementById("sourceInput"),url=normalizeUrl(input.value);
+  if(!url){showToast("올바른 URL을 입력하세요.");return}
+  const sources=currentSources();
+  if(sources.length>=20){showToast("소스는 최대 20개까지 등록할 수 있습니다.");return}
+  if(isYouTubeVideo(url)&&sources.filter(isYouTubeVideo).length>=10){
+    showToast("YouTube 영상은 한 번에 최대 10개까지 사용하세요.");return;
+  }
+  if(!sources.includes(url))sources.push(url);
+  input.value="";saveState();renderSourceList();
+}
+document.getElementById("addSourceBtn").onclick=addSource;
+document.getElementById("sourceInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();addSource()}
+});
+
+document.getElementById("attachFileBtn").onclick=()=>document.getElementById("sourceFileInput").click();
+
+document.getElementById("sourceFileInput").onchange=async e=>{
+  const incoming=[...(e.target.files||[])];
+  if(!incoming.length)return;
+
+  const supported=/\.(pdf|txt|md|csv|json|docx|pptx|hwpx)$/i;
+  const files=currentFiles();
+  let total=files.reduce((sum,f)=>sum+f.size,0);
+
+  for(const file of incoming){
+    if(!supported.test(file.name)){
+      showToast(`${file.name}: 지원하지 않는 문서 형식입니다.`);
+      continue;
+    }
+    if(file.size>35*1024*1024){
+      showToast(`${file.name}: 35MB 이하 파일을 사용하세요.`);
+      continue;
+    }
+    if(total+file.size>35*1024*1024){
+      showToast("이번 첨부 문서의 로컬 합계는 35MB 이하로 사용하세요.");
+      break;
+    }
+    if(!files.some(f=>f.name===file.name&&f.size===file.size)){
+      files.push(file);
+      total+=file.size;
+    }
+  }
+
+  e.target.value="";
+  renderFileList();
+  updateSourceModeUI(true);
+
+  if(isSupabaseReady()){
+    try{
+      setSupabaseStatus("문서를 Supabase Storage에 업로드하고 있습니다...","busy");
+      await uploadPendingFilesToSupabase(incoming);
+      setSupabaseStatus("✓ 문서가 Supabase에 저장되었습니다.","ok");
+      renderFileList();
+    }catch(error){
+      console.error(error);
+      setSupabaseStatus(`문서 업로드 실패: ${error.message}`,"error");
+    }
+  }else{
+    setSupabaseStatus("문서는 현재 브라우저에만 임시로 있습니다. Supabase 로그인 후 클라우드에 저장할 수 있습니다.");
+  }
+};
+
+function renderFileList(){
+  const el=document.getElementById("fileList");
+  const files=currentFiles();
+  const stored=currentStoredDocuments();
+  el.innerHTML="";
+
+  const remoteKeys=new Set(stored.map(d=>`${d.file_name}::${d.file_size}`));
+
+  stored.forEach((doc,index)=>{
+    const item=document.createElement("div");
+    item.className="file-item";
+    item.innerHTML=`
+      <span class="file-type">문서</span>
+      <span class="file-name">${escapeHtml(doc.file_name)}</span>
+      <span class="remote-tag">☁ 저장됨</span>
+      <span class="file-size">${formatFileSize(doc.file_size||0)}</span>
+      <button class="file-remove" title="클라우드에서도 삭제">×</button>`;
+    item.querySelector(".file-remove").onclick=async()=>{
+      if(!confirm(`'${doc.file_name}' 문서를 Supabase에서도 삭제할까요?`))return;
+      await deleteStoredDocument(doc);
+    };
+    el.appendChild(item);
+  });
+
+  files
+    .filter(file=>!remoteKeys.has(`${file.name}::${file.size}`))
+    .forEach((file,index)=>{
+      const item=document.createElement("div");
+      item.className="file-item";
+      item.innerHTML=`
+        <span class="file-type">문서</span>
+        <span class="file-name">${escapeHtml(file.name)}</span>
+        <span class="local-tag">로컬 임시</span>
+        <span class="file-size">${formatFileSize(file.size)}</span>
+        <button class="file-remove">×</button>`;
+      item.querySelector(".file-remove").onclick=()=>{
+        const realIndex=currentFiles().indexOf(file);
+        if(realIndex>=0)currentFiles().splice(realIndex,1);
+        renderFileList();
+        updateSourceModeUI(false);
+      };
+      el.appendChild(item);
+    });
+}
+
+function updateSourceModeUI(fileJustAdded=false){
+  const study=isStudyMode();
+  document.getElementById("studyModeHint").classList.toggle("show",study);
+
+  const textarea=document.getElementById("aiPrompt");
+  if(study && fileJustAdded){
+    const c=currentChannel();
+    const old=(textarea.value||"").trim();
+    const defaultPrompt=(c.prompt||"").trim();
+    if(!old || old===defaultPrompt){
+      textarea.value=`첨부한 문서를 이번 주 동안 이해하고 학습할 수 있도록 순서와 분량을 나눠줘.
+
+각 날짜의 카드에는 해당 날짜에 학습할 범위와 핵심 내용을 충분히 요약하고,
+학습 목표, 반드시 이해해야 할 개념, 복습 또는 확인 활동까지 넣어줘.
+
+문서의 앞부분부터 기계적으로 페이지 수만 나누지 말고,
+내용의 구조와 난이도, 선후 관계를 분석해서 자연스러운 학습 순서로 배치해줘.
+
+${c.prompt||""}`.trim();
+    }
+  }
+
+  const existing=getCards().length>0;
+  setGenerateLoading(false,study?"📚 학습 계획 생성":(existing?"✨ 이번 주 업데이트":"✨ 이번 주 생성"));
+}
+
+function formatFileSize(bytes){
+  if(bytes<1024)return `${bytes} B`;
+  if(bytes<1024*1024)return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1024/1024).toFixed(1)} MB`;
+}
+
+function guessMimeType(name,type=""){
+  const ext=(name.split(".").pop()||"").toLowerCase();
+
+  // HWPX has no single officially registered Internet MIME type.
+  // Store it consistently as a ZIP-based custom type.
+  if(ext==="hwpx")return "application/hwp+zip";
+
+  if(type)return type;
+
+  return {
+    pdf:"application/pdf",
+    txt:"text/plain",
+    md:"text/markdown",
+    csv:"text/csv",
+    json:"application/json",
+    docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    pptx:"application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  }[ext]||"application/octet-stream";
+}
+
+function isHwpxName(name){
+  return /\.hwpx$/i.test(String(name||""));
+}
+
+async function hwpxArrayBufferToText(buffer,fileName="document.hwpx"){
+  if(!window.JSZip)throw new Error("HWPX 분석 라이브러리를 불러오지 못했습니다.");
+
+  let zip;
+  try{
+    zip=await window.JSZip.loadAsync(buffer);
+  }catch(error){
+    throw new Error(`${fileName}: HWPX 압축 구조를 읽지 못했습니다.`);
+  }
+
+  const sectionPaths=Object.keys(zip.files)
+    .filter(path=>/^(?:.*\/)?Contents\/section\d+\.xml$/i.test(path))
+    .sort((a,b)=>{
+      const an=Number((a.match(/section(\d+)\.xml/i)||[])[1]||0);
+      const bn=Number((b.match(/section(\d+)\.xml/i)||[])[1]||0);
+      return an-bn;
+    });
+
+  if(!sectionPaths.length){
+    throw new Error(`${fileName}: HWPX 본문 XML(Contents/section*.xml)을 찾지 못했습니다.`);
+  }
+
+  const blocks=[];
+
+  for(const path of sectionPaths){
+    const entry=zip.file(path);
+    if(!entry)continue;
+
+    const xml=await entry.async("string");
+    const doc=new DOMParser().parseFromString(xml,"application/xml");
+    if(doc.getElementsByTagName("parsererror").length)continue;
+
+    const paragraphs=[...doc.getElementsByTagNameNS("*","p")];
+    const sectionLines=[];
+
+    for(const p of paragraphs){
+      const line=[...p.getElementsByTagNameNS("*","t")]
+        .map(node=>node.textContent||"")
+        .join("")
+        .replace(/\u0000/g,"")
+        .trim();
+
+      if(line)sectionLines.push(line);
+    }
+
+    if(sectionLines.length)blocks.push(sectionLines.join("\n"));
+  }
+
+  const body=blocks.join("\n\n").replace(/\n{4,}/g,"\n\n\n").trim();
+  if(!body)throw new Error(`${fileName}: HWPX에서 읽을 수 있는 본문 텍스트가 없습니다.`);
+
+  return `[HWPX 원문: ${fileName}]\n\n${body}`;
+}
+
+async function hwpxFileToText(file){
+  return hwpxArrayBufferToText(await file.arrayBuffer(),file.name);
+}
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const result=String(reader.result||"");
+      resolve(result.includes(",")?result.split(",")[1]:result);
+    };
+    reader.onerror=()=>reject(reader.error||new Error("파일 읽기 실패"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function buildDocumentParts(documentIds=null){
+  const parts=[];
+  const local=currentFiles();
+  const localKeys=new Set(local.map(file=>`${file.name}::${file.size}`));
+
+  let stored=currentStoredDocuments();
+  if(Array.isArray(documentIds)&&documentIds.length){
+    stored=await getDocumentsByIds(documentIds);
+  }
+
+  const storedKeys=new Set(stored.map(doc=>`${doc.file_name}::${doc.file_size}`));
+
+  // Supabase Storage에 올라간 문서는 브라우저로 다시 내려받지 않고
+  // document_id만 Edge Function에 전달합니다.
+  for(const doc of stored){
+    parts.push({
+      type:"stored_document",
+      document_id:doc.id
+    });
+  }
+
+  // 업로드 직전 등 아직 Storage에 없는 임시 파일만 브라우저에서 직접 전달합니다.
+  for(const file of local){
+    if(storedKeys.has(`${file.name}::${file.size}`))continue;
+
+    if(isHwpxName(file.name)){
+      parts.push({type:"text",text:await hwpxFileToText(file)});
+    }else{
+      parts.push({
+        type:"document",
+        data:await fileToBase64(file),
+        mime_type:guessMimeType(file.name,file.type)
+      });
+    }
+  }
+
+  return parts;
+}
+
+
+/* ==========================================================
+   8B. DYNAMIC MENU MANAGER
+========================================================== */
+function openMenuModal(){
+  document.getElementById("menuIconInput").value="📌";
+  document.getElementById("menuTitleInput").value="";
+  document.getElementById("menuPromptInput").value="";
+  showModal("menuModal");
+  setTimeout(()=>document.getElementById("menuTitleInput").focus(),80);
+}
+
+document.getElementById("saveMenuBtn").onclick=()=>{
+  const icon=document.getElementById("menuIconInput").value.trim()||"📌";
+  const title=document.getElementById("menuTitleInput").value.trim();
+  const prompt=document.getElementById("menuPromptInput").value.trim();
+
+  if(!title){showToast("메뉴 제목을 입력하세요.");return}
+  if(!prompt){showToast("AI에게 요청할 내용을 입력하세요.");return}
+
+  const id=`custom_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+  state.channels[id]={
+    icon,
+    label:title,
+    title,
+    desc:"사용자 정의 AI Weekly Board",
+    prompt
+  };
+  state.channel=id;
+  saveState();
+  hideModal("menuModal");
+  renderAll();
+  showToast(`'${title}' 메뉴를 추가했습니다.`);
+};
+
+async function deleteMenu(key){
+  const c=state.channels[key];
+  if(!c)return;
+  const keys=Object.keys(state.channels);
+
+  if(keys.length<=1){
+    showToast("메뉴는 최소 1개 이상 필요합니다.");
+    return;
+  }
+
+  if(!confirm(`'${c.label||c.title}' 메뉴를 삭제할까요?\n이 메뉴의 카드·참고 URL·저장 문서도 함께 삭제됩니다.`))return;
+
+  try{
+    if(isSupabaseReady()){
+      setSyncIndicator("busy");
+      await deleteRemoteChannel(key);
+    }
+
+    delete state.channels[key];
+    delete state.boards[key];
+    delete state.sources[key];
+    delete state.prompts[key];
+    delete attachedFilesByChannel[key];
+    delete storedDocumentsByChannel[key];
+
+    if(state.channel===key)state.channel=Object.keys(state.channels)[0];
+
+    saveState();
+    renderAll();
+    setSyncIndicator(isSupabaseReady()?"ok":"off");
+  }catch(error){
+    console.error(error);
+    setSyncIndicator("error");
+    showToast(`메뉴 삭제 실패: ${error.message}`);
+  }
+}
+
+/* ==========================================================
+   9. OPEN AI
+========================================================== */
+document.getElementById("aiFillBtn").onclick=()=>{
+  const c=currentChannel();
+  renderSourceList();
+  renderFileList();
+
+  document.getElementById("aiPrompt").value=
+    c.prompt ||
+    `이번 주 ${c.label} 분야에서 중요한 내용을 조사해줘.`;
+
+  document.getElementById("aiStatus").textContent="";
+  document.getElementById("progressBox").classList.remove("show");
+  document.getElementById("researchStatusPill").textContent="대기";
+  document.getElementById("researchElapsedPill").textContent="0초";
+
+  updateSourceModeUI(false);
+  showModal("aiModal");
+};
+
+/* ==========================================================
+   10. RESEARCH PROMPT — PUBLICATION DATE ≠ EVENT DATE
+========================================================== */
+function buildResearchPrompt(userPrompt,youtubeSummary=""){
+  const c=currentChannel(),days=weekDays();
+  const start=dateKey(days[0]),end=dateKey(days[6]);
+  const now=new Date();
+  const nowText=now.toLocaleString("ko-KR",{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone});
+
+  const sourceText=currentSources().length
+    ? currentSources().map((url,i)=>`${i+1}. [${sourceType(url)}] ${url}`).join("\n")
+    : "사용자가 지정한 소스 없음. Google Search로 공개 웹을 빠르게 조사할 것.";
+
+  return `
+당신은 빠르고 정확한 주간 뉴스 에디터이자 인텔리전스 분석가다.
+
+현재 시각:
+${nowText}
+
+사용자가 보고 있는 선택 주간:
+${start} ~ ${end}
+
+현재 분야:
+${c.label}
+
+[메뉴별 기본 요청]
+${c.prompt||""}
+
+[사용자 요청]
+${userPrompt}
+
+[사용자 지정 참고 소스]
+${sourceText}
+
+${youtubeSummary?`[YouTube 영상 사전 분석 결과]\n${youtubeSummary}`:""}
+
+━━━━━━━━━━━━━━━━━━━━
+가장 중요한 시간 처리 규칙:
+
+A. '게시일(publication date)'과 '사건일(event date)'을 절대 같은 것으로 간주하지 않는다.
+
+B. 카드가 선택 주간에 들어갈 수 있는 경우는 원칙적으로 다음뿐이다.
+- 선택 주간에 실제로 발생한 사건·발표·정책·실적·회의
+- 선택 주간에 공식적으로 예정되어 있고 날짜가 검증된 일정
+- 선택 주간에 새롭게 발생한 중대한 후속 전개가 있는 ongoing 이슈
+
+C. 예를 들어 7월에 게시된 글이 "8월 28일 NVIDIA 실적발표"를 알리고 있다면,
+게시일은 7월이지만 사건일은 8월 28일이다. 선택 주간에 8월 28일이 포함되면 그 글을 근거로 활용할 수 있다.
+
+D. 반대로 과거 게시물이 단지 과거 사건을 설명할 뿐이고 선택 주간에 새로운 사건이나 일정이 없다면,
+그 게시물은 배경자료로만 사용할 수 있으며 독립된 주간 카드로 만들면 안 된다.
+
+E. RSS나 채널 페이지에 과거 게시물이 많이 보여도 최신성처럼 보이게 현재 주간 날짜로 임의 재배치하지 않는다.
+
+F. 각 후보 사건에 대해 다음 시간 정보를 분리해 기록하며 조사한다.
+- sourcePublishedAt: 대표 근거 자료가 게시된 날짜
+- eventDate: 실제 사건 또는 공식 일정 날짜
+- temporalBasis: 왜 그 eventDate로 판단했는지에 대한 근거
+- status: 이미 발생 / 예정 / 관전 / 변동 가능
+
+G. 미래 일정은 실제 일정이 확인된 경우에만 포함한다. 날짜를 추측하지 않는다.
+
+H. 사용자가 지정한 URL은 우선 참고하되 한 소스만 믿지 말고 공개 웹에서 중요 사실과 날짜를 교차 검증한다.
+
+I. 이미 발생한 이벤트는 실제 결과와 시장·사회·기술적 반응까지 조사한다.
+
+J. 앞으로 예정된 이벤트는 기대, 예상 시나리오, 핵심 변수, 결과에 따른 가능한 영향을 분석한다.
+
+K. 각 중요 항목마다 충분히 조사한다.
+- 정확한 사건 날짜
+- 가능하면 시간
+- 핵심 내용
+- 왜 중요한가
+- 예상되는 영향
+- 관전 포인트
+- 근거 출처
+
+L. 중요도가 낮은 기사, 반복 기사, 단순 홍보성 글은 제외한다.
+대략 8~15개의 핵심 이벤트를 선별한다.
+`;
+}
+
+/* ==========================================================
+   11. YOUTUBE SOURCE PRE-ANALYSIS
+========================================================== */
+async function analyzeYoutubeSources(){
+  const videos=currentSources().filter(isYouTubeVideo).slice(0,10);
+  if(!videos.length)return "";
+
+  setProgress("참고 YouTube 영상 분석 중",`${videos.length}개 영상을 ${state.settings.analysisModel}로 분석하고 있습니다.`);
+
+  const input=[
+    {type:"text",text:
+`다음 YouTube 영상들을 분석해 이번 주 ${currentChannel().label} 조사에 도움이 되는 핵심 사실, 주장, 날짜, 전망을 영상별로 정리해줘.
+특히 영상 게시일과 영상에서 언급하는 실제 사건·예정일을 구분해라.
+영상에서 직접 확인되지 않은 사실을 만들어내지 말 것.`},
+    ...videos.map(uri=>({type:"video",uri}))
+  ];
+
+  const result=await postInteraction({model:state.settings.analysisModel,input});
+  return extractLastText(result);
+}
+
+/* ==========================================================
+   12. DEEP RESEARCH
+========================================================== */
+async function runDeepResearch(prompt){
+  setProgress("Deep Research 시작",`${state.settings.researchAgent}가 여러 출처와 일정을 조사합니다.`);
+
+  const started=await postInteraction({
+    agent:state.settings.researchAgent,
+    input:prompt,
+    background:true,
+    store:true,
+    agent_config:{
+      type:"deep-research",
+      thinking_summaries:"auto",
+      visualization:"off",
+      collaborative_planning:false
+    }
+    // tools를 생략하면 Deep Research가 기본적으로
+    // Google Search + URL Context + Code Execution을 사용할 수 있습니다.
+  });
+
+  if(!started.id)throw new Error("Deep Research 작업 ID를 받지 못했습니다.");
+  return await pollInteraction(started.id);
+}
+
+async function pollInteraction(id){
+  const started=Date.now();
+  const POLL_MS=8000;
+  const MAX_WAIT_MS=12*60*1000; // 선택 카드 심층 분석 최대 대기
+
+  while(true){
+    const elapsedMs=Date.now()-started;
+    const elapsedSec=Math.floor(elapsedMs/1000);
+
+    if(elapsedMs>=MAX_WAIT_MS){
+      throw new Error(
+        "Deep Research가 12분 안에 완료되지 않았습니다. 잠시 후 다시 시도해 주세요."
+      );
+    }
+
+    const result=await getInteraction(id);
+    const status=result.status||"unknown";
+
+    document.getElementById("researchStatusPill").textContent=
+      status==="in_progress" ? "Deep Research 진행 중" : status;
+
+    if(document.getElementById("detailModal")?.classList.contains("show")){
+      setDetailStatus(`Deep Research 진행 중 · ${formatElapsed(elapsedSec)} 경과`);
+    }
+
+    document.getElementById("researchElapsedPill").textContent=
+      formatElapsed(elapsedSec);
+
+    setProgress(
+      "Deep Research 진행 중",
+      `${formatElapsed(elapsedSec)} 경과 · 서버에서 웹 검색, 자료 읽기, 일정 교차검증을 수행 중입니다.`
+    );
+
+    if(status==="completed"||status==="incomplete"){
+      document.getElementById("researchStatusPill").textContent="조사 완료";
+      return result;
+    }
+
+    if(status==="failed"){
+      throw new Error(result?.error?.message||"Deep Research가 실패했습니다.");
+    }
+
+    if(status==="cancelled"){
+      throw new Error("Deep Research 작업이 취소되었습니다.");
+    }
+
+    if(status==="requires_action"){
+      throw new Error(
+        "Deep Research가 추가 사용자 입력을 요구했습니다. 현재 자동 심층 분석에서는 이 단계를 처리할 수 없습니다."
+      );
+    }
+
+    await sleep(POLL_MS);
+  }
+}
+
+/* ==========================================================
+   13. FALLBACK SEARCH
+========================================================== */
+async function runSearchFallback(prompt){
+  document.getElementById("researchStatusPill").textContent="빠른 웹 조사";
+  setProgress("Google Search 빠른 조사",`${state.settings.analysisModel} + Google Search로 이번 주 핵심 이슈와 예정 일정을 조사합니다.`);
+  const tools=[{type:"google_search"}];
+  if(currentSources().some(x=>!isYouTubeVideo(x)))tools.push({type:"url_context"});
+
+  return await postInteraction({
+    model:state.settings.analysisModel,
+    input:prompt,
+    tools
+  });
+}
+
+/* ==========================================================
+   14. CITATIONS
+========================================================== */
+function extractCitations(data){
+  const result=[];
+  for(const step of data.steps||[]){
+    for(const content of step.content||[]){
+      for(const ann of content.annotations||[]){
+        if(ann.type==="url_citation"&&ann.url)result.push(ann.url);
+      }
+    }
+  }
+  return [...new Set(result)];
+}
+
+
+/* ==========================================================
+   14B. DOCUMENT STUDY TODO MODE
+========================================================== */
+async function generateStudyPlan(userPrompt){
+  const validDates=weekDays().map(dateKey);
+  const files=currentFiles();
+  const storedDocs=currentStoredDocuments();
+  if(!files.length && !storedDocs.length)throw new Error("학습할 문서를 첨부하세요.");
+
+  setProgress(
+    "문서 분석 · 학습 계획 구성",
+    `${files.length+storedDocs.length}개 문서의 실제 내용·구조·난이도를 분석해 이번 주 학습 TODO로 나누고 있습니다.`
+  );
+  document.getElementById("researchStatusPill").textContent="문서 학습";
+
+  if(isSupabaseReady() && files.length){
+    await uploadPendingFilesToSupabase(files);
+  }
+  const refreshedStored=currentStoredDocuments();
+  const fileNames=[
+    ...new Set([
+      ...files.map(f=>f.name),
+      ...refreshedStored.map(d=>d.file_name)
+    ])
+  ];
+  const documentIds=refreshedStored.map(d=>d.id);
+  const docParts=await buildDocumentParts();
+
+  const prompt=`당신은 학습 설계 전문가다.
+
+사용자가 첨부한 문서를 선택 주간 동안 이해할 수 있도록 5~7개의 학습 TODO 카드로 재구성한다.
+
+[선택 주간]
+${validDates.join(", ")}
+
+[메뉴]
+${currentChannel().label}
+
+[사용자 학습 요청]
+${userPrompt}
+
+[첨부 문서]
+${fileNames.join("\n")}
+
+핵심 원칙:
+1. 뉴스 조사 모드가 아니다. 첨부 문서 자체를 학습 자료로 사용한다.
+2. 문서의 실제 구성, 장·절, 주제, 개념의 선후 관계를 먼저 파악한 뒤 학습 순서를 설계한다.
+3. 단순히 페이지 수를 7등분하지 않는다.
+4. 하루에 너무 많은 내용을 몰아넣지 말고, 난이도와 개념 연결 관계를 고려해 분량을 나눈다.
+5. 원문 내용을 왜곡하거나 일반 지식으로 임의 보충하지 않는다.
+6. 여러 문서가 있으면 문서 간 연관성을 판단해 자연스러운 순서로 통합하거나 각각 배치한다.
+7. title은 보드에서 한눈에 보이도록 간결하게 작성한다.
+8. studyRange에는 그날 공부할 원문 범위를 가능한 한 구체적으로 적는다.
+   예: "3장 2절~4절", "p.35~52", "제2부 학교자율과정 전체".
+   페이지 정보가 원문에서 확인되지 않으면 페이지를 추측하지 말고 장·절·주제로 적는다.
+9. summary에는 그날 학습할 핵심 내용을 3~6문장으로 충분히 정리한다.
+10. whyImportant에는 그날의 학습 목표와 이해해야 할 이유를 작성한다.
+10. outlook에는 학습 후 할 복습, 적용, 자기점검 활동을 작성한다.
+11. watchpoints에는 반드시 기억하거나 이해해야 할 핵심 개념·질문 2~5개를 넣는다.
+12. dateKey는 반드시 제공된 선택 주간 날짜 중 하나만 사용한다.
+13. 학습 순서는 날짜가 지날수록 이해가 누적되도록 구성한다.
+14. 문서 분량이 적다면 억지로 7개를 만들지 말고 3~5개로 줄여도 된다.
+15. 문서 분량이 많아도 최대 7개 카드로 구성하되 각 카드 summary에 학습 범위를 명확히 적는다.`;
+
+  const schema={
+    type:"object",
+    properties:{
+      cards:{
+        type:"array",
+        items:{
+          type:"object",
+          properties:{
+            dateKey:{type:"string"},
+            title:{type:"string"},
+            studyRange:{type:"string"},
+            summary:{type:"string"},
+            whyImportant:{type:"string"},
+            outlook:{type:"string"},
+            watchpoints:{type:"array",items:{type:"string"}}
+          },
+          required:["dateKey","title","studyRange","summary","whyImportant","outlook","watchpoints"]
+        }
+      }
+    },
+    required:["cards"]
+  };
+
+  const input=[{type:"text",text:prompt},...docParts];
+
+  const regularUrls=currentSources().filter(x=>!isYouTubeVideo(x));
+  const body={
+    model:state.settings.analysisModel,
+    input,
+    response_format:{
+      type:"text",
+      mime_type:"application/json",
+      schema
+    }
+  };
+  if(regularUrls.length)body.tools=[{type:"url_context"}];
+
+  const result=await postInteraction(body);
+  const raw=extractLastText(result);
+  if(!raw)throw new Error("학습 계획 응답이 비어 있습니다.");
+
+  const parsed=JSON.parse(raw);
+  if(!Array.isArray(parsed.cards))throw new Error("학습 계획 결과 형식이 올바르지 않습니다.");
+
+  return parsed.cards
+    .filter(x=>validDates.includes(x.dateKey)&&x.title)
+    .map(x=>({
+      id:crypto.randomUUID(),
+      mode:"study",
+      dateKey:x.dateKey,
+      timeLabel:"",
+      status:"study",
+      impact:"medium",
+      title:x.title,
+      studyRange:x.studyRange||"",
+      summary:x.summary||"",
+      whyImportant:x.whyImportant||"",
+      outlook:x.outlook||"",
+      watchpoints:Array.isArray(x.watchpoints)?x.watchpoints:[],
+      sourcePublishedAt:"",
+      temporalBasis:"첨부 문서의 내용 구조와 학습 순서를 기준으로 배치",
+      sourceUrls:[],
+      sourceFiles:fileNames,
+      documentIds,
+      youtubeScript:"",
+      deepAnalysis:""
+    }));
+}
+
+async function applyStudyPlan(cards){
+  const previousStudy=getCards().filter(c=>c.mode==="study");
+  const existing=getCards().filter(c=>c.mode!=="study");
+
+  if(isSupabaseReady() && previousStudy.length){
+    await deleteRemoteCardsByIds(previousStudy.map(c=>c.id));
+  }
+
+  state.boards[state.channel][weekKey()]=[...existing,...cards];
+}
+
+/* ==========================================================
+   15. STRUCTURED CARD OUTPUT
+========================================================== */
+async function researchToCards(report,citationUrls){
+  setProgress("뉴스 카드 구성 중",`${state.settings.analysisModel}이 사건 날짜와 게시 날짜를 분리해 주간 카드로 재구성합니다.`);
+
+  const validDates=weekDays().map(dateKey);
+  const sourcePool=[...currentSources(),...citationUrls];
+  const uniqueSources=[...new Set(sourcePool)].filter(validHttpUrl).slice(0,60);
+
+  const prompt=`
+다음은 빠른 Google Search 기반 조사 결과다. 이를 AI Weekly Intelligence 카드로 변환한다.
+
+[선택 주간 날짜]
+${validDates.join(", ")}
+
+[실제 출처 URL]
+${uniqueSources.length?uniqueSources.join("\n"):"출처 URL 목록 없음"}
+
+[기존 카드]
+${getCards().map(x=>`${x.dateKey} | ${x.status} | ${x.title}`).join("\n")||"없음"}
+
+[리서치 보고서]
+${report}
+
+━━━━━━━━━━━━━━━━━━━━
+시간 분류는 특히 엄격하게 처리한다.
+
+1. dateKey는 '기사 게시일'이 아니라 '실제 사건일 또는 공식 일정일'이다.
+2. 과거에 게시된 글이 이번 주의 미래 일정을 설명한다면 그 글은 source로 사용할 수 있다.
+3. 과거 글에 이번 주 사건이 전혀 없다면 그 내용을 억지로 이번 주 카드에 넣지 않는다.
+4. 오래된 피드의 게시일을 현재 주간 날짜로 바꾸는 행위는 금지한다.
+5. ongoing 이슈는 선택 주간에 새 후속 사건이 있을 때만 카드로 만든다.
+6. sourcePublishedAt에는 대표 근거 자료의 게시 날짜를 가능하면 YYYY-MM-DD로 적는다.
+7. temporalBasis에는 dateKey가 왜 그 날짜인지 짧고 구체적으로 적는다.
+   예: "NVIDIA IR 공식 실적발표 캘린더", "BLS CPI release schedule", "8/27 법원 선고기일".
+8. scheduled는 선택 주간 안의 날짜가 실제 확인된 미래 일정에만 사용한다.
+9. summary는 약 2~4문장으로 충분히 설명한다.
+10. whyImportant는 1~3문장.
+11. outlook은 1~3문장.
+12. watchpoints는 2~4개.
+13. 같은 사건을 기사별로 여러 카드로 만들지 않는다.
+14. 핵심 이슈 8~15개 정도를 우선한다.
+15. sourceUrls에는 제공된 실제 URL만 사용하며 URL을 지어내지 않는다.
+16. 기존 카드와 사실상 같은 사건이고 새로운 변화가 없다면 결과에서 제외한다.
+`;
+
+  const schema={
+    type:"object",
+    properties:{
+      cards:{
+        type:"array",
+        items:{
+          type:"object",
+          properties:{
+            dateKey:{type:"string"},
+            timeLabel:{type:"string"},
+            status:{type:"string",enum:["reported","scheduled","watch","tentative"]},
+            impact:{type:"string",enum:["high","medium","low"]},
+            title:{type:"string"},
+            summary:{type:"string"},
+            whyImportant:{type:"string"},
+            outlook:{type:"string"},
+            watchpoints:{type:"array",items:{type:"string"}},
+            sourcePublishedAt:{type:"string"},
+            temporalBasis:{type:"string"},
+            sourceUrls:{type:"array",items:{type:"string"}}
+          },
+          required:[
+            "dateKey","timeLabel","status","impact","title","summary","whyImportant",
+            "outlook","watchpoints","sourcePublishedAt","temporalBasis","sourceUrls"
+          ]
+        }
+      }
+    },
+    required:["cards"]
+  };
+
+  const result=await postInteraction({
+    model:state.settings.analysisModel,
+    input:prompt,
+    response_format:{
+      type:"text",
+      mime_type:"application/json",
+      schema
+    }
+  });
+
+  const text=extractLastText(result);
+  if(!text)throw new Error("카드 생성 응답이 비어 있습니다.");
+
+  const parsed=JSON.parse(text);
+  if(!Array.isArray(parsed.cards))throw new Error("Gemini 카드 결과 형식이 올바르지 않습니다.");
+
+  return parsed.cards
+    .filter(x=>validDates.includes(x.dateKey)&&x.title)
+    .map(x=>({
+      id:crypto.randomUUID(),
+      dateKey:x.dateKey,
+      timeLabel:x.timeLabel||"",
+      status:statusConfig[x.status]?x.status:"reported",
+      impact:["high","medium","low"].includes(x.impact)?x.impact:"medium",
+      title:x.title,
+      summary:x.summary||"",
+      youtubeScript:"",
+      deepAnalysis:"",
+      whyImportant:x.whyImportant||"",
+      outlook:x.outlook||"",
+      watchpoints:Array.isArray(x.watchpoints)?x.watchpoints:[],
+      sourcePublishedAt:x.sourcePublishedAt||"",
+      temporalBasis:x.temporalBasis||"",
+      sourceUrls:Array.isArray(x.sourceUrls)?x.sourceUrls.filter(validHttpUrl):[]
+    }));
+}
+
+/* ==========================================================
+   16. FAST GENERATE / UPDATE — NO DEEP RESEARCH
+========================================================== */
+document.getElementById("generateBtn").onclick=async()=>{
+  if(!aiKeyReady){
+    hideModal("aiModal");
+    openSettings();
+    setSettingsStatus("설정에서 본인의 Gemini API Key를 먼저 등록하세요.","error");
+    return;
+  }
+
+  const request=document.getElementById("aiPrompt").value.trim();
+  if(!request){showToast("AI 요청 내용을 입력하세요.");return}
+
+  const study=isStudyMode();
+  const existingBefore=getCards().length;
+
+  setGenerateLoading(
+    true,
+    study ? "학습 계획 생성 중" : (existingBefore?"이번 주 업데이트 중":"빠른 조사 중")
+  );
+  document.getElementById("progressBox").classList.add("show");
+  document.getElementById("researchStatusPill").textContent=study?"문서 준비":"Google Search";
+  document.getElementById("researchElapsedPill").textContent="0초";
+  setAiStatus("");
+
+  const started=Date.now();
+  const timer=setInterval(()=>{
+    document.getElementById("researchElapsedPill").textContent=
+      formatElapsed(Math.floor((Date.now()-started)/1000));
+  },1000);
+
+  try{
+    if(study){
+      const cards=await generateStudyPlan(request);
+      if(!cards.length)throw new Error("첨부 문서에서 학습 계획을 만들지 못했습니다.");
+      await applyStudyPlan(cards);
+      saveState();
+      renderAll();
+      hideModal("aiModal");
+      showToast(`${cards.length}개의 학습 TODO 카드를 생성했습니다.`);
+      return;
+    }
+
+    let youtubeSummary="";
+    try{
+      youtubeSummary=await analyzeYoutubeSources();
+    }catch(e){
+      console.warn("YouTube 분석 실패",e);
+    }
+
+    const prompt=buildResearchPrompt(request,youtubeSummary);
+    const researchResult=await runSearchFallback(prompt);
+    const report=extractLastText(researchResult);
+    if(!report)throw new Error("빠른 웹 조사 결과가 비어 있습니다.");
+
+    setProgress("2단계 · 카드 구성","핵심 후보를 날짜별 카드로 정리하고 기존 카드와 중복을 비교합니다.");
+    document.getElementById("researchStatusPill").textContent="카드 구성";
+
+    const cards=await researchToCards(report,extractCitations(researchResult));
+    if(!cards.length)throw new Error("선택 주간에 새로 반영할 핵심 이슈가 발견되지 않았습니다.");
+
+    const result=mergeBriefCards(cards);
+    saveState();
+    renderAll();
+    hideModal("aiModal");
+    showToast(
+      existingBefore
+        ? `업데이트 완료 · 새 카드 ${result.added}개 · 갱신 ${result.updated}개`
+        : `${result.added}개의 핵심 카드를 생성했습니다.`
+    );
+  }catch(error){
+    console.error(error);
+    setAiStatus(error.message||"AI 생성 중 오류가 발생했습니다.","error");
+  }finally{
+    clearInterval(timer);
+    setGenerateLoading(
+      false,
+      study ? "📚 학습 계획 생성" : (existingBefore?"✨ 이번 주 업데이트":"✨ 이번 주 생성")
+    );
+  }
+};
+
+function mergeBriefCards(newCards){
+  const cards=getCards();let added=0,updated=0;
+  for(const incoming of newCards){
+    const key=normalizeTitle(incoming.title);
+    const existing=cards.find(c=>c.dateKey===incoming.dateKey&&normalizeTitle(c.title)===key);
+    if(existing){
+      const deep=existing.deepAnalysis||"",script=existing.youtubeScript||"";
+      Object.assign(existing,incoming,{id:existing.id,deepAnalysis:deep,youtubeScript:script});updated++;
+    }else{cards.push(incoming);added++}
+  }
+  return{added,updated};
+}
+
+/* ==========================================================
+   16B. SELECTED CARD DEEP RESEARCH
+========================================================== */
+document.getElementById("deepResearchBtn").onclick=async()=>{
+  if(!aiKeyReady){hideModal("detailModal");openSettings();setSettingsStatus("본인의 Gemini API Key를 먼저 등록하세요.","error");return}
+  const id=document.getElementById("detailCardId").value,card=getCards().find(x=>x.id===id);if(!card)return;
+  setLoadingButton("deepResearchBtn",true,"심층 분석 중");setDetailStatus("선택한 카드만 Deep Research로 깊게 조사하고 있습니다. 몇 분 걸릴 수 있습니다.");
+  try{
+    const result=await runDeepResearch(buildCardDeepPrompt(card));
+    const text=extractLastText(result);if(!text)throw new Error("심층 분석 결과가 비어 있습니다.");
+    card.deepAnalysis=text.trim();card.sourceUrls=[...new Set([...(card.sourceUrls||[]),...extractCitations(result)])].filter(validHttpUrl);
+    saveState();renderBoard();renderDetailSources(card);renderDetailGenerated(card);setDetailStatus("✓ 심층 분석을 카드에 저장했습니다.","success");
+  }catch(e){setDetailStatus(e.message||"심층 분석 오류","error")}
+  finally{resetLoadingButton("deepResearchBtn","🔍 심층 분석")}
+};
+
+function buildCardDeepPrompt(card){
+  return `다음 하나의 뉴스/일정만 심층 조사한다.
+
+[분야] ${currentChannel().label}
+[날짜] ${card.dateKey} ${card.timeLabel||""}
+[제목] ${card.title}
+[핵심 내용] ${card.summary||""}
+[왜 중요한가] ${card.whyImportant||""}
+[현재 전망] ${card.outlook||""}
+[관전 포인트]
+${(card.watchpoints||[]).join("\n")}
+[현재 출처]
+${(card.sourceUrls||[]).join("\n")}
+
+원 출처와 공식 발표를 교차검증하고 배경, 핵심 변화, 숫자·일정, 실제 반응 또는 예정 시나리오, 1차·2차 영향, 유튜브 소재로서 흥미로운 맥락을 충분히 상세하게 한국어로 분석하라. 사실과 전망을 명확히 구분하라.`;
+}
+
+/* ==========================================================
+   17. INTERACTIONS API
+========================================================== */
+async function invokeAiEdge(action,payload={}){
+  if(!supabaseClient||!supabaseUser)throw new Error("Google 로그인이 필요합니다.");
+
+  const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();
+  if(sessionError||!session)throw new Error("로그인 세션이 만료되었습니다. 다시 로그인하세요.");
+
+  const response=await fetch(
+    `${SUPABASE_URL}/functions/v1/${AI_EDGE_FUNCTION}`,
+    {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "apikey":SUPABASE_PUBLISHABLE_KEY,
+        "Authorization":`Bearer ${session.access_token}`
+      },
+      body:JSON.stringify({action,...payload})
+    }
+  );
+
+  const raw=await response.text();
+  let data;
+  try{data=raw?JSON.parse(raw):{}}
+  catch{data={error:raw||"알 수 없는 서버 응답"}}
+
+  if(!response.ok){
+    const message=data?.error||`AI 서버 오류 (${response.status})`;
+    const detail=data?.detail?`\n${String(data.detail).slice(0,600)}`:"";
+    throw new Error(`${message}${detail}`);
+  }
+
+  return data;
+}
+
+async function postInteraction(body){
+  return await invokeAiEdge("interaction",{payload:body});
+}
+
+async function getInteraction(id){
+  return await invokeAiEdge("interaction_get",{interaction_id:id});
+}
+
+function extractLastText(data){
+  if(data.output_text)return String(data.output_text).trim();
+  const steps=data.steps||[];
+  for(let i=steps.length-1;i>=0;i--){
+    if(steps[i].type!=="model_output")continue;
+    const text=(steps[i].content||[])
+      .filter(x=>x.type==="text")
+      .map(x=>x.text||"").join("\n").trim();
+    if(text)return text;
+  }
+  return "";
+}
+
+
+/* ==========================================================
+   17B. SUPABASE CLOUD / GOOGLE AUTH / SECURE BYOK
+========================================================== */
+function isSupabaseReady(){
+  return !!(supabaseClient&&supabaseUser);
+}
+
+function getSupabaseConfig(){
+  return {url:SUPABASE_URL,key:SUPABASE_PUBLISHABLE_KEY,bucket:SUPABASE_BUCKET};
+}
+
+function setSyncIndicator(mode="off"){
+  const btn=document.getElementById("settingsBtn");
+  btn.classList.remove("sync-ok","sync-busy","sync-error","sync-off");
+  btn.classList.add(`sync-${mode}`);
+  btn.title={
+    ok:"설정 · 클라우드 동기화됨",
+    busy:"설정 · 클라우드 동기화 중",
+    error:"설정 · 클라우드 오류",
+    off:"설정 · 로그인 필요"
+  }[mode]||"설정";
+}
+
+function setSupabaseStatus(text,type=""){
+  const el=document.getElementById("supabaseStatus");
+  if(!el)return;
+  el.textContent=text;
+  el.className=`cloud-status ${type}`;
+}
+
+function setAuthGateStatus(text=""){
+  const el=document.getElementById("authGateStatus");
+  if(el)el.textContent=text;
+}
+
+function getUserDisplay(){
+  const meta=supabaseUser?.user_metadata||{};
+  return {
+    name:meta.full_name||meta.name||supabaseUser?.email||"Google 사용자",
+    email:supabaseUser?.email||"",
+    avatar:meta.avatar_url||meta.picture||""
+  };
+}
+
+function updateUserUI(){
+  const info=getUserDisplay();
+  const chip=document.getElementById("userChip");
+  const chipAvatar=document.getElementById("userChipAvatar");
+  const chipText=document.getElementById("userChipText");
+  const settingsAvatar=document.getElementById("settingsAvatar");
+  const settingsName=document.getElementById("settingsUserName");
+  const settingsEmail=document.getElementById("settingsUserEmail");
+
+  if(supabaseUser){
+    chip.classList.add("show");
+    chipText.textContent=info.name;
+    if(info.avatar){
+      chipAvatar.src=info.avatar;
+      settingsAvatar.src=info.avatar;
+    }else{
+      chipAvatar.removeAttribute("src");
+      settingsAvatar.removeAttribute("src");
+    }
+    settingsName.textContent=info.name;
+    settingsEmail.textContent=info.email;
+  }else{
+    chip.classList.remove("show");
+    settingsName.textContent="Google 로그인 필요";
+    settingsEmail.textContent="";
+  }
+}
+
+function showAuthGate(message=""){
+  document.getElementById("authGate").classList.remove("hidden");
+  setAuthGateStatus(message);
+  setSyncIndicator("off");
+}
+
+function hideAuthGate(){
+  document.getElementById("authGate").classList.add("hidden");
+  setAuthGateStatus("");
+}
+
+function refreshSupabaseSettingsStatus(){
+  if(isSupabaseReady()){
+    const info=getUserDisplay();
+    setSupabaseStatus(
+      `✓ Google 로그인됨: ${info.email||supabaseUser.id}\n내 메뉴·카드·문서가 사용자별로 자동 동기화됩니다.`,
+      "ok"
+    );
+  }else{
+    setSupabaseStatus("Google 로그인이 필요합니다.");
+  }
+}
+
+async function initializeSupabaseClient(){
+  if(!window.supabase?.createClient){
+    showAuthGate("Supabase JS 라이브러리를 불러오지 못했습니다.");
+    setSyncIndicator("error");
+    return false;
+  }
+
+  try{
+    supabaseClient=window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY,
+      {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}
+    );
+
+    supabaseClient.auth.onAuthStateChange((event,session)=>{
+      if(event==="SIGNED_OUT"){
+        setTimeout(()=>handleSignedOut(),0);
+      }else if(event==="SIGNED_IN"&&session?.user&&session.user.id!==supabaseUser?.id){
+        setTimeout(()=>{
+          supabaseUser=session.user;
+          onSupabaseSignedIn().catch(error=>console.error(error));
+        },0);
+      }
+    });
+
+    const {data,error}=await supabaseClient.auth.getSession();
+    if(error)throw error;
+
+    if(data?.session?.user){
+      supabaseUser=data.session.user;
+      await onSupabaseSignedIn();
+    }else{
+      supabaseUser=null;
+      state=structuredClone(defaultState);
+      renderAll();
+      updateUserUI();
+      showAuthGate();
+    }
+
+    return true;
+  }catch(error){
+    console.error(error);
+    setSyncIndicator("error");
+    showAuthGate(`클라우드 초기화 실패: ${error.message}`);
+    return false;
+  }
+}
+
+async function googleLogin(){
+  if(!supabaseClient){
+    const ok=await initializeSupabaseClient();
+    if(!ok)return;
+  }
+
+  if(location.protocol==="file:"){
+    setAuthGateStatus(
+      "Google OAuth는 file://로 직접 연 HTML에서는 동작하지 않습니다.\nlocalhost 또는 실제 배포 URL에서 실행하세요."
+    );
+    return;
+  }
+
+  const redirectTo=`${location.origin}${location.pathname}`;
+  setAuthGateStatus("Google 로그인 화면으로 이동합니다...");
+
+  const {error}=await supabaseClient.auth.signInWithOAuth({
+    provider:"google",
+    options:{redirectTo}
+  });
+
+  if(error)setAuthGateStatus(`Google 로그인 시작 실패: ${error.message}`);
+}
+
+async function supabaseLogout(){
+  if(supabaseClient)await supabaseClient.auth.signOut();
+  handleSignedOut();
+}
+
+function handleSignedOut(){
+  supabaseUser=null;
+  cloudHydrated=false;
+  aiKeyReady=false;
+  aiKeyMeta=null;
+  storedDocumentsByChannel={};
+  attachedFilesByChannel={};
+  state=structuredClone(defaultState);
+  renderAll();
+  updateUserUI();
+  refreshAiKeyStatusUI();
+  refreshSupabaseSettingsStatus();
+  showAuthGate("로그아웃되었습니다.");
+}
+
+async function onSupabaseSignedIn(){
+  if(!supabaseUser||authInitializing)return;
+  authInitializing=true;
+  cloudHydrated=false;
+
+  try{
+    hideAuthGate();
+    updateUserUI();
+    setSyncIndicator("busy");
+    setSupabaseStatus("내 클라우드 자료를 확인하고 있습니다...","busy");
+
+    const cached=loadUserCachedState(supabaseUser.id);
+    state=cached||structuredClone(defaultState);
+    storedDocumentsByChannel={};
+    attachedFilesByChannel={};
+    renderAll();
+
+    const {count,error}=await supabaseClient
+      .from("awi_channels")
+      .select("id",{count:"exact",head:true})
+      .eq("user_id",supabaseUser.id);
+
+    if(error)throw error;
+
+    if((count||0)>0){
+      await pullAllFromSupabase();
+    }else{
+      await pushAllToSupabase();
+    }
+
+    cloudHydrated=true;
+    saveState();
+    await refreshAiKeyStatus();
+
+    setSyncIndicator("ok");
+    refreshSupabaseSettingsStatus();
+    updateLegacyImportUI();
+    renderAll();
+    renderFileList();
+  }catch(error){
+    console.error(error);
+    setSyncIndicator("error");
+    setSupabaseStatus(`클라우드 초기화 실패: ${error.message}`,"error");
+  }finally{
+    authInitializing=false;
+  }
+}
+
+async function refreshAiKeyStatus(){
+  if(!isSupabaseReady()){
+    aiKeyReady=false;aiKeyMeta=null;refreshAiKeyStatusUI();return;
+  }
+
+  try{
+    const data=await invokeAiEdge("status");
+    aiKeyReady=!!data.configured;
+    aiKeyMeta=data.configured?data:null;
+  }catch(error){
+    console.error(error);
+    aiKeyReady=false;
+    aiKeyMeta={error:error.message};
+  }
+
+  refreshAiKeyStatusUI();
+}
+
+function refreshAiKeyStatusUI(){
+  const el=document.getElementById("aiKeyStatus");
+  if(!el)return;
+
+  if(aiKeyReady){
+    el.className="key-status-pill ok";
+    el.textContent=`등록됨 ·••••${aiKeyMeta?.key_hint||""}`;
+  }else if(aiKeyMeta?.error){
+    el.className="key-status-pill error";
+    el.textContent="확인 오류";
+  }else{
+    el.className="key-status-pill";
+    el.textContent="미등록";
+  }
+}
+
+async function saveAiKeyToCloud(){
+  if(!isSupabaseReady())throw new Error("Google 로그인이 필요합니다.");
+  const input=document.getElementById("apiKeyInput");
+  const apiKey=input.value.trim();
+  if(!apiKey)throw new Error("Gemini API Key를 입력하세요.");
+
+  setSettingsStatus("API Key를 Gemini에 검증한 뒤 암호화하여 저장하고 있습니다...");
+  const data=await invokeAiEdge("save_key",{api_key:apiKey});
+
+  aiKeyReady=true;
+  aiKeyMeta={configured:true,key_hint:data.key_hint||apiKey.slice(-4)};
+  input.value="";
+  clearLegacyApiKeyFromBrowser();
+  refreshAiKeyStatusUI();
+  setSettingsStatus("✓ API Key 검증 및 암호화 저장 완료","success");
+}
+
+async function deleteAiKeyFromCloud(){
+  if(!isSupabaseReady())throw new Error("Google 로그인이 필요합니다.");
+  if(!confirm("저장된 Gemini API Key를 삭제할까요?"))return;
+  await invokeAiEdge("delete_key");
+  aiKeyReady=false;aiKeyMeta=null;
+  refreshAiKeyStatusUI();
+  setSettingsStatus("Gemini API Key를 삭제했습니다.");
+}
+
+function updateLegacyImportUI(){
+  const box=document.getElementById("legacyImportBox");
+  if(!box)return;
+  box.classList.toggle("show",hasMeaningfulStateData(legacyStateCandidate));
+}
+
+async function importLegacyDataForCurrentUser(){
+  if(!isSupabaseReady()||!legacyStateCandidate)return;
+  if(!confirm("이 브라우저의 기존 V6 로컬 메뉴·카드를 현재 Google 계정으로 가져올까요?"))return;
+
+  suppressRemoteSync=true;
+  try{
+    state=normalizeSavedState(legacyStateCandidate);
+    state.settings.supabaseUrl=SUPABASE_URL;
+    state.settings.supabasePublishableKey=SUPABASE_PUBLISHABLE_KEY;
+    state.settings.supabaseBucket=SUPABASE_BUCKET;
+    saveState();
+  }finally{
+    suppressRemoteSync=false;
+  }
+
+  await pushAllToSupabase();
+  await pullAllFromSupabase();
+  showToast("기존 로컬 자료를 현재 계정으로 가져왔습니다.");
+}
+
+function scheduleSupabaseSync(){
+  if(!isSupabaseReady()||suppressRemoteSync||!cloudHydrated)return;
+  clearTimeout(remoteSyncTimer);
+  remoteSyncTimer=setTimeout(()=>pushAllToSupabase().catch(error=>{
+    console.error(error);
+    setSyncIndicator("error");
+  }),900);
+}
+
+function flattenCardsForSupabase(){
+  const rows=[];
+  for(const [channelId,weeks] of Object.entries(state.boards||{})){
+    for(const [wk,cards] of Object.entries(weeks||{})){
+      for(const c of cards||[]){
+        rows.push({
+          user_id:supabaseUser.id,
+          id:c.id,
+          channel_id:channelId,
+          week_key:wk,
+          date_key:c.dateKey||wk,
+          time_label:c.timeLabel||"",
+          status:c.status||"reported",
+          impact:c.impact||"medium",
+          title:c.title||"",
+          study_range:c.studyRange||"",
+          summary:c.summary||"",
+          why_important:c.whyImportant||"",
+          outlook:c.outlook||"",
+          watchpoints:c.watchpoints||[],
+          source_published_at:c.sourcePublishedAt||"",
+          temporal_basis:c.temporalBasis||"",
+          source_urls:c.sourceUrls||[],
+          mode:c.mode||"news",
+          document_ids:c.documentIds||[],
+          source_files:c.sourceFiles||[],
+          deep_analysis:c.deepAnalysis||"",
+          youtube_script:c.youtubeScript||"",
+          updated_at:new Date().toISOString()
+        });
+      }
+    }
+  }
+  return rows;
+}
+
+function channelRowsForSupabase(){
+  return Object.entries(state.channels||{}).map(([id,c],index)=>({
+    user_id:supabaseUser.id,
+    id,
+    icon:c.icon||"📌",
+    label:c.label||c.title||"메뉴",
+    title:c.title||c.label||"메뉴",
+    description:c.desc||"",
+    prompt:c.prompt||"",
+    source_urls:state.sources?.[id]||[],
+    sort_order:index,
+    updated_at:new Date().toISOString()
+  }));
+}
+
+async function pushAllToSupabase(){
+  if(!isSupabaseReady()||remoteSyncBusy)return;
+  remoteSyncBusy=true;
+  setSyncIndicator("busy");
+
+  try{
+    const channelRows=channelRowsForSupabase();
+    if(channelRows.length){
+      const {error}=await supabaseClient
+        .from("awi_channels")
+        .upsert(channelRows,{onConflict:"user_id,id"});
+      if(error)throw error;
+    }
+
+
+    const cardRows=flattenCardsForSupabase();
+    if(cardRows.length){
+      const {error}=await supabaseClient
+        .from("awi_cards")
+        .upsert(cardRows,{onConflict:"user_id,id"});
+      if(error)throw error;
+    }
+
+
+    const {error:settingsError}=await supabaseClient
+      .from("awi_user_settings")
+      .upsert({
+        user_id:supabaseUser.id,
+        current_channel:state.channel,
+        analysis_model:state.settings.analysisModel,
+        research_agent:state.settings.researchAgent,
+        youtube_model:state.settings.youtubeModel,
+        updated_at:new Date().toISOString()
+      },{onConflict:"user_id"});
+    if(settingsError)throw settingsError;
+
+    setSyncIndicator("ok");
+  }finally{
+    remoteSyncBusy=false;
+  }
+}
+
+async function pullAllFromSupabase(){
+  if(!isSupabaseReady())return;
+
+  setSyncIndicator("busy");
+  setSupabaseStatus("Supabase에서 메뉴·카드·문서를 불러오고 있습니다...","busy");
+
+  const [
+    channelsRes,
+    cardsRes,
+    settingsRes,
+    docsRes
+  ]=await Promise.all([
+    supabaseClient.from("awi_channels").select("*").eq("user_id",supabaseUser.id).order("sort_order"),
+    supabaseClient.from("awi_cards").select("*").eq("user_id",supabaseUser.id),
+    supabaseClient.from("awi_user_settings").select("*").eq("user_id",supabaseUser.id).maybeSingle(),
+    supabaseClient.from("awi_documents").select("*").eq("user_id",supabaseUser.id).order("created_at")
+  ]);
+
+  for(const res of [channelsRes,cardsRes,settingsRes,docsRes]){
+    if(res.error)throw res.error;
+  }
+
+  if(!(channelsRes.data||[]).length){
+    await pushAllToSupabase();
+    return;
+  }
+
+  suppressRemoteSync=true;
+  try{
+    const newChannels={};
+    const newSources={};
+
+    for(const row of channelsRes.data||[]){
+      newChannels[row.id]={
+        icon:row.icon||"📌",
+        label:row.label||row.title||"메뉴",
+        title:row.title||row.label||"메뉴",
+        desc:row.description||"",
+        prompt:row.prompt||""
+      };
+      newSources[row.id]=Array.isArray(row.source_urls)?row.source_urls:[];
+    }
+
+    const newBoards={};
+    for(const row of cardsRes.data||[]){
+      newBoards[row.channel_id] ||= {};
+      newBoards[row.channel_id][row.week_key] ||= [];
+      newBoards[row.channel_id][row.week_key].push({
+        id:row.id,
+        mode:row.mode||"news",
+        dateKey:row.date_key,
+        timeLabel:row.time_label||"",
+        status:row.status||"reported",
+        impact:row.impact||"medium",
+        title:row.title||"",
+        studyRange:row.study_range||"",
+        summary:row.summary||"",
+        whyImportant:row.why_important||"",
+        outlook:row.outlook||"",
+        watchpoints:Array.isArray(row.watchpoints)?row.watchpoints:[],
+        sourcePublishedAt:row.source_published_at||"",
+        temporalBasis:row.temporal_basis||"",
+        sourceUrls:Array.isArray(row.source_urls)?row.source_urls:[],
+        documentIds:Array.isArray(row.document_ids)?row.document_ids:[],
+        sourceFiles:Array.isArray(row.source_files)?row.source_files:[],
+        deepAnalysis:row.deep_analysis||"",
+        youtubeScript:row.youtube_script||""
+      });
+    }
+
+    state.channels=newChannels;
+    state.sources=newSources;
+    state.boards=newBoards;
+
+    if(settingsRes.data){
+      state.channel=
+        newChannels[settingsRes.data.current_channel]
+          ? settingsRes.data.current_channel
+          : Object.keys(newChannels)[0];
+
+      state.settings.analysisModel=settingsRes.data.analysis_model||state.settings.analysisModel;
+      state.settings.researchAgent=settingsRes.data.research_agent||state.settings.researchAgent;
+      state.settings.youtubeModel=settingsRes.data.youtube_model||state.settings.youtubeModel;
+    }else if(!newChannels[state.channel]){
+      state.channel=Object.keys(newChannels)[0];
+    }
+
+    storedDocumentsByChannel={};
+    for(const doc of docsRes.data||[]){
+      storedDocumentsByChannel[doc.channel_id] ||= [];
+      storedDocumentsByChannel[doc.channel_id].push(doc);
+    }
+
+    saveState();
+  }finally{
+    suppressRemoteSync=false;
+  }
+
+  renderAll();
+  renderFileList();
+  setSyncIndicator("ok");
+  refreshSupabaseSettingsStatus();
+}
+
+async function uploadPendingFilesToSupabase(files){
+  if(!isSupabaseReady()||!files?.length)return;
+
+  const bucket=state.settings.supabaseBucket||"weekly-documents";
+  const existing=currentStoredDocuments();
+
+  for(const file of files){
+    if(existing.some(d=>d.file_name===file.name&&Number(d.file_size)===Number(file.size)))continue;
+
+    const safeName=file.name.replace(/[^\w.\-가-힣]+/g,"_");
+    const path=`${supabaseUser.id}/${state.channel}/${crypto.randomUUID()}_${safeName}`;
+
+    const {error:uploadError}=await supabaseClient
+      .storage
+      .from(bucket)
+      .upload(path,file,{
+        contentType:guessMimeType(file.name,file.type),
+        upsert:false
+      });
+
+    if(uploadError)throw uploadError;
+
+    const {data,error}=await supabaseClient
+      .from("awi_documents")
+      .insert({
+        user_id:supabaseUser.id,
+        channel_id:state.channel,
+        file_name:file.name,
+        storage_path:path,
+        mime_type:guessMimeType(file.name,file.type),
+        file_size:file.size
+      })
+      .select()
+      .single();
+
+    if(error){
+      await supabaseClient.storage.from(bucket).remove([path]);
+      throw error;
+    }
+
+    currentStoredDocuments().push(data);
+  }
+
+  renderFileList();
+}
+
+async function deleteStoredDocument(doc){
+  if(!isSupabaseReady()){
+    showToast("Supabase 로그인 후 클라우드 문서를 삭제할 수 있습니다.");
+    return;
+  }
+
+  const bucket=state.settings.supabaseBucket||"weekly-documents";
+
+  const {error:storageError}=await supabaseClient
+    .storage
+    .from(bucket)
+    .remove([doc.storage_path]);
+  if(storageError)throw storageError;
+
+  const {error:dbError}=await supabaseClient
+    .from("awi_documents")
+    .delete()
+    .eq("user_id",supabaseUser.id)
+    .eq("id",doc.id);
+  if(dbError)throw dbError;
+
+  for(const arr of Object.values(storedDocumentsByChannel)){
+    const index=arr.findIndex(x=>x.id===doc.id);
+    if(index>=0)arr.splice(index,1);
+  }
+
+  // 카드 연결에서도 제거
+  for(const weeks of Object.values(state.boards||{})){
+    for(const cards of Object.values(weeks||{})){
+      for(const card of cards||[]){
+        card.documentIds=(card.documentIds||[]).filter(id=>id!==doc.id);
+        card.sourceFiles=(card.sourceFiles||[]).filter(name=>name!==doc.file_name);
+      }
+    }
+  }
+
+  saveState();
+  renderFileList();
+  renderBoard();
+}
+
+async function getDocumentsByIds(ids){
+  if(!ids?.length)return [];
+  const cached=[];
+  const missing=[];
+
+  for(const id of ids){
+    let found=null;
+    for(const arr of Object.values(storedDocumentsByChannel)){
+      found=arr.find(d=>d.id===id);
+      if(found)break;
+    }
+    if(found)cached.push(found);else missing.push(id);
+  }
+
+  if(missing.length && isSupabaseReady()){
+    const {data,error}=await supabaseClient
+      .from("awi_documents")
+      .select("*")
+      .eq("user_id",supabaseUser.id)
+      .in("id",missing);
+    if(error)throw error;
+
+    for(const doc of data||[]){
+      storedDocumentsByChannel[doc.channel_id] ||= [];
+      if(!storedDocumentsByChannel[doc.channel_id].some(x=>x.id===doc.id)){
+        storedDocumentsByChannel[doc.channel_id].push(doc);
+      }
+      cached.push(doc);
+    }
+  }
+
+  return cached;
+}
+
+async function deleteRemoteCardsByIds(ids){
+  if(!isSupabaseReady()||!ids?.length)return;
+  const {error}=await supabaseClient
+    .from("awi_cards")
+    .delete()
+    .eq("user_id",supabaseUser.id)
+    .in("id",ids);
+  if(error)throw error;
+}
+
+async function deleteRemoteWeekCards(channelId,wk){
+  if(!isSupabaseReady())return;
+  const {error}=await supabaseClient
+    .from("awi_cards")
+    .delete()
+    .eq("user_id",supabaseUser.id)
+    .eq("channel_id",channelId)
+    .eq("week_key",wk);
+  if(error)throw error;
+}
+
+async function deleteRemoteChannel(channelId){
+  if(!isSupabaseReady())return;
+  await deleteRemoteDocumentsForChannel(channelId);
+  const {error}=await supabaseClient
+    .from("awi_channels")
+    .delete()
+    .eq("user_id",supabaseUser.id)
+    .eq("id",channelId);
+  if(error)throw error;
+}
+
+async function deleteRemoteDocumentsForChannel(channelId){
+  if(!isSupabaseReady())return;
+  const {data,error}=await supabaseClient
+    .from("awi_documents")
+    .select("*")
+    .eq("user_id",supabaseUser.id)
+    .eq("channel_id",channelId);
+  if(error)throw error;
+
+  const docs=data||[];
+  const paths=docs.map(d=>d.storage_path).filter(Boolean);
+  if(paths.length){
+    const {error:storageError}=await supabaseClient
+      .storage
+      .from(state.settings.supabaseBucket||"weekly-documents")
+      .remove(paths);
+    if(storageError)throw storageError;
+  }
+
+  const {error:deleteError}=await supabaseClient
+    .from("awi_documents")
+    .delete()
+    .eq("user_id",supabaseUser.id)
+    .eq("channel_id",channelId);
+  if(deleteError)throw deleteError;
+
+  delete storedDocumentsByChannel[channelId];
+}
+
+function arrayBufferToBase64(buffer){
+  const bytes=new Uint8Array(buffer);
+  let binary="";
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk){
+    binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
+  }
+  return btoa(binary);
+}
+
+document.getElementById("googleLoginBtn").onclick=googleLogin;
+document.getElementById("supabaseLogoutBtn").onclick=supabaseLogout;
+document.getElementById("userChip").onclick=openSettings;
+
+document.getElementById("pushCloudBtn").onclick=async()=>{
+  if(!isSupabaseReady()){setSupabaseStatus("Google 로그인이 필요합니다.","error");return}
+  try{
+    setSupabaseStatus("현재 자료를 내 클라우드 공간에 저장하고 있습니다...","busy");
+    await uploadPendingFilesToSupabase(currentFiles());
+    await pushAllToSupabase();
+    saveState();
+    setSupabaseStatus("✓ 클라우드 저장 완료","ok");
+  }catch(error){setSupabaseStatus(error.message,"error")}
+};
+
+document.getElementById("pullCloudBtn").onclick=async()=>{
+  if(!isSupabaseReady()){setSupabaseStatus("Google 로그인이 필요합니다.","error");return}
+  try{
+    await pullAllFromSupabase();
+    saveState();
+    setSupabaseStatus("✓ 클라우드 자료를 새로 불러왔습니다.","ok");
+  }catch(error){setSupabaseStatus(error.message,"error")}
+};
+
+document.getElementById("importLegacyBtn").onclick=()=>importLegacyDataForCurrentUser().catch(error=>{
+  console.error(error);
+  setSettingsStatus(error.message,"error");
+});
+
+/* ==========================================================
+   18. SETTINGS
+========================================================== */
+document.getElementById("settingsBtn").onclick=openSettings;
+
+function openSettings(){
+  if(!supabaseUser){
+    showAuthGate("Google 로그인 후 설정을 사용할 수 있습니다.");
+    return;
+  }
+
+  document.getElementById("researchAgentInput").value=state.settings.researchAgent;
+  document.getElementById("analysisModelInput").value=state.settings.analysisModel;
+  document.getElementById("youtubeModelInput").value=state.settings.youtubeModel;
+
+  const input=document.getElementById("apiKeyInput");
+  input.value=legacyLocalApiKey||"";
+  input.placeholder=legacyLocalApiKey
+    ?"기존 브라우저 API Key를 감지했습니다. 저장하면 안전한 서버 저장으로 이전됩니다."
+    :"새 API Key를 입력하면 등록/변경됩니다.";
+
+  updateUserUI();
+  refreshSupabaseSettingsStatus();
+  refreshAiKeyStatusUI();
+  updateLegacyImportUI();
+  setSettingsStatus("");
+  showModal("settingsModal");
+}
+
+document.getElementById("saveSettingsBtn").onclick=async()=>{
+  state.settings.researchAgent=document.getElementById("researchAgentInput").value;
+  state.settings.analysisModel=document.getElementById("analysisModelInput").value;
+  state.settings.youtubeModel=document.getElementById("youtubeModelInput").value;
+  saveState();
+  hideModal("settingsModal");
+  showToast("모델 설정을 저장했습니다.");
+};
+
+document.getElementById("saveAiKeyBtn").onclick=async()=>{
+  try{await saveAiKeyToCloud()}
+  catch(error){setSettingsStatus(error.message,"error")}
+};
+
+document.getElementById("deleteAiKeyBtn").onclick=async()=>{
+  try{await deleteAiKeyFromCloud()}
+  catch(error){setSettingsStatus(error.message,"error")}
+};
+
+document.getElementById("testApiBtn").onclick=async()=>{
+  if(!aiKeyReady){
+    setSettingsStatus("먼저 Gemini API Key를 저장하세요.","error");
+    return;
+  }
+
+  setSettingsStatus("서버에 저장된 Gemini API Key 연결 확인 중...");
+  try{
+    const model=document.getElementById("analysisModelInput").value;
+    const result=await postInteraction({model,input:"Reply with exactly: OK"});
+    if(extractLastText(result)){
+      setSettingsStatus(`✓ 연결 성공 · ${model} · API Key는 서버에서만 사용됨`,"success");
+    }
+  }catch(error){
+    setSettingsStatus(error.message,"error");
+  }
+};
+
+/* ==========================================================
+   19. WEEK NAVIGATION
+========================================================== */
+document.getElementById("prevWeek").onclick=()=>{currentWeekStart=addDays(currentWeekStart,-7);renderAll()};
+document.getElementById("nextWeek").onclick=()=>{currentWeekStart=addDays(currentWeekStart,7);renderAll()};
+document.getElementById("thisWeek").onclick=()=>{currentWeekStart=getMonday(new Date());renderAll()};
+
+/* ==========================================================
+   20. CLEAR / EXPORT / IMPORT
+========================================================== */
+document.getElementById("clearBtn").onclick=async()=>{
+  if(!confirm("현재 분야의 이번 주 카드를 모두 삭제할까요?"))return;
+
+  try{
+    if(isSupabaseReady())await deleteRemoteWeekCards(state.channel,weekKey());
+    state.boards[state.channel][weekKey()]=[];
+    saveState();
+    renderBoard();
+  }catch(error){
+    console.error(error);
+    showToast(`이번 주 삭제 실패: ${error.message}`);
+  }
+};
+
+document.getElementById("exportBtn").onclick=()=>{
+  const data={app:"AI Weekly Intelligence",schemaVersion:SCHEMA_VERSION,channel:state.channel,week:weekKey(),cards:getCards()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=`weekly-intelligence_${state.channel}_${weekKey()}.json`;a.click();URL.revokeObjectURL(url);
+};
+
+document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    if(!Array.isArray(data.cards))throw new Error("올바른 보드 파일이 아닙니다.");
+    if(isSupabaseReady())await deleteRemoteWeekCards(state.channel,weekKey());
+    state.boards[state.channel][weekKey()]=data.cards.map(x=>({
+      ...x,
+      id:x.id||crypto.randomUUID(),
+      studyRange:x.studyRange||"",
+      youtubeScript:x.youtubeScript||"",
+      deepAnalysis:x.deepAnalysis||""
+    }));
+    saveState();renderBoard();showToast("가져오기를 완료했습니다.");
+  }catch(e){alert(e.message)}
+  e.target.value="";
+};
+
+/* ==========================================================
+   21. MODAL / UTIL
+========================================================== */
+function showModal(id){document.getElementById(id).classList.add("show")}
+function hideModal(id){document.getElementById(id).classList.remove("show")}
+
+document.querySelectorAll("[data-close]").forEach(btn=>{
+  btn.onclick=()=>hideModal(btn.dataset.close);
+});
+document.querySelectorAll(".modal-backdrop").forEach(backdrop=>{
+  backdrop.addEventListener("mousedown",e=>{if(e.target===backdrop)hideModal(backdrop.id)});
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")document.querySelectorAll(".modal-backdrop.show").forEach(x=>x.classList.remove("show"));
+});
+
+function splitLines(text){return text.split("\n").map(x=>x.trim()).filter(Boolean)}
+function normalizeTitle(s){return String(s||"").toLowerCase().replace(/[^0-9a-z가-힣]/g,"")}
+function nl2br(text){return escapeHtml(text).replace(/\n/g,"<br>")}
+function escapeHtml(value){
+  return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function domainName(url){try{return new URL(url).hostname.replace(/^www\./,"")}catch{return "source"}}
+function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
+
+function formatElapsed(seconds){
+  const m=Math.floor(seconds/60);
+  const s=seconds%60;
+  return m>0 ? `${m}분 ${s}초` : `${s}초`;
+}
+
+function setGenerateLoading(on,label=""){
+  const btn=document.getElementById("generateBtn");
+  const labelEl=btn.querySelector(".btn-label");
+  btn.disabled=on;btn.classList.toggle("loading",on);
+  labelEl.textContent=label || (getCards().length?"✨ 이번 주 업데이트":"✨ 이번 주 생성");
+}
+
+function setProgress(title,sub=""){
+  const box=document.getElementById("progressBox");box.classList.add("show");
+  document.getElementById("progressTitle").textContent=title;
+  document.getElementById("progressSub").textContent=sub;
+}
+function setAiStatus(text,type=""){
+  const el=document.getElementById("aiStatus");el.textContent=text;el.className=`api-status ${type}`;
+}
+function setSettingsStatus(text,type=""){
+  const el=document.getElementById("settingsStatus");el.textContent=text;el.className=`api-status ${type}`;
+}
+let toastTimer;
+function showToast(message){
+  const el=document.getElementById("toast");el.textContent=message;el.classList.add("show");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2300);
+}
+
+/* ==========================================================
+   22. INIT
+========================================================== */
+function renderAll(){ensureBoard();renderHeading();renderTabs();renderBoard()}
+renderAll();
+updateUserUI();
+refreshAiKeyStatusUI();
+initializeSupabaseClient().catch(error=>console.error("Supabase 초기화 실패",error));
+</script>
+</body>
+</html>
