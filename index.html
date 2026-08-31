@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.8</title>
+<title>AI Weekly Intelligence V7.9</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,7 +410,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.8 source-first attribution */
+/* V7.9 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
@@ -436,7 +436,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .source-test-result.error{border-color:#743746;background:#2a151c;color:#ff9aaa}
 
 
-/* V7.8 board visibility */
+/* V7.9 board visibility */
 .board-summary{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:10px
 }
@@ -496,8 +496,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   <div class="brand">
     <div class="brand-logo">W</div>
     <div>
-      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.8</span></div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.8</div>
+      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.9</span></div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.9</div>
     </div>
   </div>
 
@@ -646,18 +646,6 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
         <div class="detail-text" id="detailSummary"></div>
       </div>
       <div class="detail-section">
-        <div class="detail-label" id="detailWhyLabel">왜 중요한가</div>
-        <div class="detail-text" id="detailWhy"></div>
-      </div>
-      <div class="detail-section">
-        <div class="detail-label" id="detailOutlookLabel">전망 · 영향</div>
-        <div class="detail-text" id="detailOutlook"></div>
-      </div>
-      <div class="detail-section">
-        <div class="detail-label" id="detailWatchLabel">관전 포인트</div>
-        <ul class="detail-list" id="detailWatchpoints"></ul>
-      </div>
-      <div class="detail-section">
         <div class="detail-label" id="detailSourcesLabel">출처</div>
         <div class="detail-sources" id="detailSources"></div>
       </div>
@@ -738,7 +726,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
           <textarea
             id="cardYoutubeScript"
             style="min-height:300px"
-            placeholder="아래 '유튜브 콘텐츠 생성' 버튼을 누르면 이 카드의 뉴스·전망·출처를 바탕으로 스크립트를 작성합니다."
+            placeholder="아래 '유튜브 콘텐츠 생성' 버튼을 누르면 이 카드의 핵심 내용과 출처를 바탕으로 스크립트를 작성합니다."
           ></textarea>
           <div class="youtube-status" id="youtubeStatus"></div>
           <div class="production-sources" id="cardYoutubeSources" style="display:none"></div>
@@ -746,21 +734,6 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
       </div>
 
       <div id="cardAdvancedFields">
-      <div class="field" style="margin-top:16px">
-        <label>왜 중요한가</label>
-        <textarea id="cardWhy"></textarea>
-      </div>
-
-      <div class="field">
-        <label>전망 / 영향</label>
-        <textarea id="cardOutlook"></textarea>
-      </div>
-
-      <div class="field">
-        <label>관전 포인트 — 한 줄에 하나</label>
-        <textarea id="cardWatchpoints"></textarea>
-      </div>
-
       <div class="two-col">
         <div class="field">
           <label>대표 출처 게시일</label>
@@ -1380,6 +1353,65 @@ function distributeReferenceCards(cards){
   }));
 }
 
+function mergeLegacyCoreContent(card){
+  if(!card)return "";
+  const parts=[];
+  const summary=String(card.summary||"").trim();
+  const why=String(card.whyImportant||"").trim();
+  const outlook=String(card.outlook||"").trim();
+  const watch=Array.isArray(card.watchpoints)?card.watchpoints.map(x=>String(x||"").trim()).filter(Boolean):[];
+
+  if(summary)parts.push(summary);
+  if(why && !summary.includes(why))parts.push(why);
+  if(outlook && !summary.includes(outlook))parts.push(outlook);
+  if(watch.length){
+    const watchText=watch.join(" · ");
+    if(!parts.join(" ").includes(watchText))parts.push(watchText);
+  }
+  return parts.join("\n\n").trim();
+}
+
+function compactCardTitle(raw,maxLen=34){
+  let s=String(raw||"")
+    .replace(/https?:\/\/\S+/g,"")
+    .replace(/\s+/g," ")
+    .trim();
+
+  // 피드 원문에서 흔한 장식/인용부호/이모지 과다를 줄인다.
+  s=s.replace(/^[“”"'‘’`]+|[“”"'‘’`]+$/g,"").trim();
+  s=s.replace(/\s*[•·|｜]\s*/g," · ");
+
+  if(s.length<=maxLen)return s;
+
+  // 첫 문장 또는 핵심 구를 우선 사용
+  const first=s.split(/(?<=[.!?。！？])\s+/)[0].trim();
+  if(first && first.length<=maxLen)return first.replace(/[.!?。！？]+$/,"");
+
+  // 구분자 앞에서 자연스럽게 자르기
+  const candidates=s.split(/\s*[-–—:：|｜]\s*/).map(x=>x.trim()).filter(Boolean);
+  if(candidates[0] && candidates[0].length>=10 && candidates[0].length<=maxLen){
+    return candidates[0];
+  }
+
+  return s.slice(0,maxLen-1).trimEnd()+"…";
+}
+
+function unifiedContentGuidance(mode="news",sourceDriven=false){
+  if(mode==="study"){
+    return `핵심내용 하나에 그날 학습할 내용, 이해해야 할 핵심 개념, 실제 학습 활동/복습 방법, 자기점검 포인트를 자연스럽게 통합한다.
+별도의 '학습 목표/복습/체크포인트' 소제목을 만들지 말고 하나의 읽기 쉬운 설명으로 작성한다.`;
+  }
+  if(sourceDriven){
+    return `핵심내용 하나에 참고소스가 실제로 말한 핵심, 웹 검증으로 확인한 사실, 실전 활용 또는 콘텐츠화할 만한 포인트를 주제에 맞게 자연스럽게 통합한다.
+경제 뉴스가 아니라면 억지로 전망·영향·관전포인트를 만들지 않는다.
+AI 업데이트라면 무엇이 바뀌었는지와 실제 활용 포인트, 피드 정리라면 원문 핵심과 검증 결과, 제품/모델 소식이라면 변화와 사용 맥락을 중심으로 쓴다.`;
+  }
+  return `핵심내용 하나에 해당 뉴스에서 사용자가 실제로 알아야 할 정보를 주제에 맞게 통합한다.
+경제·시장 뉴스라면 주요 수치와 의미·영향을 자연스럽게 포함하고, AI/기술 뉴스라면 무엇이 바뀌었는지·실제 활용 포인트·주의점을 중심으로 한다.
+정책/교육 뉴스라면 변화 내용과 적용 대상을, 일반 이슈라면 사건의 핵심과 이후 확인할 사항을 적절히 포함한다.
+모든 카드에 획일적으로 '왜 중요한가/전망/관전포인트'를 넣지 않는다.`;
+}
+
 function importanceScore(v){return {high:3,medium:2,low:1}[v]||1}
 
 function createCard(card){
@@ -1428,10 +1460,7 @@ function openDetailModal(cardId){
   document.querySelector("#detailModal .modal-title").textContent=study?"학습 TODO 상세":"뉴스 상세";
   document.getElementById("studyRangeSection").style.display=study?"block":"none";
   document.getElementById("detailStudyRange").textContent=card.studyRange||"문서의 내용 구조를 기준으로 배정";
-  document.getElementById("detailSummaryLabel").textContent=study?"핵심 내용":"핵심 내용";
-  document.getElementById("detailWhyLabel").textContent=study?"학습 목표":"왜 중요한가";
-  document.getElementById("detailOutlookLabel").textContent=study?"학습 활동 · 복습":"전망 · 영향";
-  document.getElementById("detailWatchLabel").textContent=study?"핵심 체크포인트":"관전 포인트";
+  document.getElementById("detailSummaryLabel").textContent="핵심 내용";
   document.getElementById("detailSourcesLabel").textContent=study?"참고 문서":"출처";
   const s=statusConfig[card.status]||statusConfig.reported;
   document.getElementById("detailMeta").innerHTML=`
@@ -1444,13 +1473,7 @@ function openDetailModal(cardId){
       :`<span class="badge source-origin-badge ${getCardSourceKind(card)}">${escapeHtml(getCardSourceLabel(card))}</span>`}
     ${card.sourcePublishedAt?`<span class="badge">출처 게시 ${escapeHtml(card.sourcePublishedAt)}</span>`:""}`;
   document.getElementById("detailTitle").textContent=card.title||"";
-  document.getElementById("detailSummary").textContent=card.summary||"내용 없음";
-  document.getElementById("detailWhy").textContent=card.whyImportant||"내용 없음";
-  document.getElementById("detailOutlook").textContent=card.outlook||"내용 없음";
-
-  const w=document.getElementById("detailWatchpoints");w.innerHTML="";
-  (card.watchpoints||[]).forEach(x=>{const li=document.createElement("li");li.textContent=x;w.appendChild(li)});
-  if(!(card.watchpoints||[]).length){const li=document.createElement("li");li.textContent="등록된 관전 포인트가 없습니다.";w.appendChild(li)}
+  document.getElementById("detailSummary").textContent=mergeLegacyCoreContent(card)||"내용 없음";
 
   renderDetailSources(card);
   renderDetailGenerated(card);
@@ -1541,13 +1564,10 @@ function openCardModal(card=null,defaultDate=null){
   document.getElementById("cardStatus").value=card?.status||"reported";
   document.getElementById("cardImpact").value=card?.impact||"medium";
   document.getElementById("cardTitle").value=card?.title||"";
-  document.getElementById("cardSummary").value=card?.summary||"";
+  document.getElementById("cardSummary").value=card?mergeLegacyCoreContent(card):"";
   document.getElementById("cardYoutubeScript").value=card?.youtubeScript||"";
   youtubeSourcesDraft=Array.isArray(card?.youtubeSources)?structuredClone(card.youtubeSources):[];
   renderProductionSources("cardYoutubeSources",youtubeSourcesDraft);
-  document.getElementById("cardWhy").value=card?.whyImportant||"";
-  document.getElementById("cardOutlook").value=card?.outlook||"";
-  document.getElementById("cardWatchpoints").value=(card?.watchpoints||[]).join("\n");
   document.getElementById("cardSourcePublishedAt").value=card?.sourcePublishedAt||"";
   document.getElementById("cardTemporalBasis").value=card?.temporalBasis||"";
   document.getElementById("cardSources").value=(card?.sourceUrls||[]).join("\n");
@@ -1556,8 +1576,9 @@ function openCardModal(card=null,defaultDate=null){
   document.getElementById("youtubeStatus").className="youtube-status";
 
   // 입력 화면 단순화
+  // 카드 본문은 '핵심 내용' 하나로 통합한다.
   // 직접 카드 추가: 날짜/시간/상태/중요도/제목/핵심내용/유튜브 스크립트만 표시
-  // AI 생성 카드: 고급 정보는 표시하되, 빈 심층분석/유튜브 스크립트 영역은 숨김
+  // AI 생성 카드: 출처·시간 근거 같은 고급 정보만 별도로 유지한다.
   const isNewCard=!card;
   const youtubePanel=document.getElementById("cardYoutubePanel");
   const advancedFields=document.getElementById("cardAdvancedFields");
@@ -1594,9 +1615,9 @@ function readCardForm(){
     summary:document.getElementById("cardSummary").value.trim(),
     youtubeScript:document.getElementById("cardYoutubeScript").value.trim(),
     youtubeSources:structuredClone(youtubeSourcesDraft||[]),
-    whyImportant:document.getElementById("cardWhy").value.trim(),
-    outlook:document.getElementById("cardOutlook").value.trim(),
-    watchpoints:splitLines(document.getElementById("cardWatchpoints").value),
+    whyImportant:"",
+    outlook:"",
+    watchpoints:[],
     sourcePublishedAt:document.getElementById("cardSourcePublishedAt").value.trim(),
     temporalBasis:document.getElementById("cardTemporalBasis").value.trim(),
     sourceUrls:splitLines(document.getElementById("cardSources").value).filter(validHttpUrl),
@@ -1836,16 +1857,7 @@ ${card.title}
 ${card.studyRange||"카드 핵심 내용과 원문 구조를 기준으로 관련 부분을 찾을 것"}
 
 [카드 핵심 내용]
-${card.summary||""}
-
-[학습 목표]
-${card.whyImportant||""}
-
-[학습 활동 · 복습]
-${card.outlook||""}
-
-[핵심 체크포인트]
-${(card.watchpoints||[]).join("\n")||"없음"}
+${mergeLegacyCoreContent(card)||""}
 
 [연결된 원본 문서]
 ${(card.sourceFiles||[]).join("\n")||"첨부 문서"}
@@ -1884,16 +1896,7 @@ ${card.dateKey} ${card.timeLabel||""}
 ${card.title}
 
 [핵심 내용]
-${card.summary||""}
-
-[왜 중요한가]
-${card.whyImportant||""}
-
-[전망 · 영향]
-${card.outlook||""}
-
-[관전 포인트]
-${(card.watchpoints||[]).join("\n")||"별도 관전 포인트 없음"}
+${mergeLegacyCoreContent(card)||""}
 
 [심층 분석 결과]
 ${card.deepAnalysis||"심층 분석 결과 없음. 필요한 핵심 사실은 Google Search와 제공된 출처에서 확인할 것."}
@@ -2430,8 +2433,8 @@ function updateSourceModeUI(fileJustAdded=false){
     if(!old || old===defaultPrompt){
       textarea.value=`첨부한 문서를 이번 주 동안 이해하고 학습할 수 있도록 순서와 분량을 나눠줘.
 
-각 날짜의 카드에는 해당 날짜에 학습할 범위와 핵심 내용을 충분히 요약하고,
-학습 목표, 반드시 이해해야 할 개념, 복습 또는 확인 활동까지 넣어줘.
+각 날짜의 카드에는 해당 날짜에 학습할 범위와 '핵심 내용' 하나만 작성해줘.
+핵심 내용 안에 배울 개념, 이해 포인트, 학습 활동, 복습·확인 방법을 문서 성격에 맞게 자연스럽게 통합해줘.
 
 문서의 앞부분부터 기계적으로 페이지 수만 나누지 말고,
 내용의 구조와 난이도, 선후 관계를 분석해서 자연스러운 학습 순서로 배치해줘.
@@ -2756,10 +2759,10 @@ J. 앞으로 예정된 이벤트는 기대, 예상 시나리오, 핵심 변수, 
 K. 각 중요 항목마다 충분히 조사한다.
 - 정확한 사건 날짜
 - 가능하면 시간
-- 핵심 내용
-- 왜 중요한가
-- 예상되는 영향
-- 관전 포인트
+- 핵심 사실과 변화
+- 주제에 맞는 의미·활용·영향·주의점 중 필요한 요소
+- 경제 뉴스라면 핵심 수치와 시장 의미, AI/기술 뉴스라면 변화와 실제 활용 포인트
+- 정책·교육 뉴스라면 적용 대상과 현장 변화
 - 근거 출처
 
 L. 중요도가 낮은 기사, 반복 기사, 단순 홍보성 글은 제외한다.
@@ -3191,18 +3194,17 @@ ${fileNames.join("\n")}
 4. 하루에 너무 많은 내용을 몰아넣지 말고, 난이도와 개념 연결 관계를 고려해 분량을 나눈다.
 5. 원문 내용을 왜곡하거나 일반 지식으로 임의 보충하지 않는다.
 6. 여러 문서가 있으면 문서 간 연관성을 판단해 자연스러운 순서로 통합하거나 각각 배치한다.
-7. title은 보드에서 한눈에 보이도록 간결하게 작성한다.
+7. title은 12~28자 안팎으로 짧고 선명하게 작성한다. 문서의 긴 문장을 그대로 제목으로 복사하지 않는다.
 8. studyRange에는 그날 공부할 원문 범위를 가능한 한 구체적으로 적는다.
    예: "3장 2절~4절", "p.35~52", "제2부 학교자율과정 전체".
    페이지 정보가 원문에서 확인되지 않으면 페이지를 추측하지 말고 장·절·주제로 적는다.
-9. summary에는 그날 학습할 핵심 내용을 3~6문장으로 충분히 정리한다.
-10. whyImportant에는 그날의 학습 목표와 이해해야 할 이유를 작성한다.
-10. outlook에는 학습 후 할 복습, 적용, 자기점검 활동을 작성한다.
-11. watchpoints에는 반드시 기억하거나 이해해야 할 핵심 개념·질문 2~5개를 넣는다.
+9. summary는 '핵심 내용' 하나만 작성한다.
+10. 핵심 내용 안에 그날 배울 내용, 반드시 이해해야 할 개념, 실제 학습 활동, 복습·자기점검 방법을 문서 성격에 맞게 자연스럽게 통합한다.
+11. '학습 목표', '전망', '체크포인트' 같은 고정 소제목으로 나누지 않는다. 읽으면 그날 무엇을 이해하고 무엇을 해볼지 자연스럽게 알 수 있게 4~7문장 정도로 작성한다.
 12. dateKey는 반드시 제공된 선택 주간 날짜 중 하나만 사용한다.
 13. 학습 순서는 날짜가 지날수록 이해가 누적되도록 구성한다.
 14. 문서 분량이 적다면 억지로 7개를 만들지 말고 3~5개로 줄여도 된다.
-15. 문서 분량이 많아도 최대 7개 카드로 구성하되 각 카드 summary에 학습 범위를 명확히 적는다.`;
+15. 문서 분량이 많아도 최대 7개 카드로 구성하되 studyRange에 학습 범위를 명확히 적는다.`;
 
   const schema={
     type:"object",
@@ -3215,12 +3217,9 @@ ${fileNames.join("\n")}
             dateKey:{type:"string"},
             title:{type:"string"},
             studyRange:{type:"string"},
-            summary:{type:"string"},
-            whyImportant:{type:"string"},
-            outlook:{type:"string"},
-            watchpoints:{type:"array",items:{type:"string"}}
+            summary:{type:"string"}
           },
-          required:["dateKey","title","studyRange","summary","whyImportant","outlook","watchpoints"]
+          required:["dateKey","title","studyRange","summary"]
         }
       }
     },
@@ -3257,12 +3256,12 @@ ${fileNames.join("\n")}
       timeLabel:"",
       status:"study",
       impact:"medium",
-      title:x.title,
+      title:compactCardTitle(x.title||"학습 계획",30),
       studyRange:x.studyRange||"",
       summary:x.summary||"",
-      whyImportant:x.whyImportant||"",
-      outlook:x.outlook||"",
-      watchpoints:Array.isArray(x.watchpoints)?x.watchpoints:[],
+      whyImportant:"",
+      outlook:"",
+      watchpoints:[],
       sourcePublishedAt:"",
       temporalBasis:"첨부 문서의 내용 구조와 학습 순서를 기준으로 배치",
       primarySourceLabel:"첨부문서",
@@ -3319,12 +3318,9 @@ async function sourceItemsToCards(selectedItems,userPrompt=""){
             impact:{type:"string",enum:["high","medium","low"]},
             title:{type:"string"},
             summary:{type:"string"},
-            whyImportant:{type:"string"},
-            outlook:{type:"string"},
-            watchpoints:{type:"array",items:{type:"string"}},
             verificationUrls:{type:"array",items:{type:"string"}}
           },
-          required:["candidateId","impact","title","summary","whyImportant","outlook","watchpoints","verificationUrls"]
+          required:["candidateId","impact","title","summary","verificationUrls"]
         }
       }
     },
@@ -3346,11 +3342,13 @@ ${evidence}
 2. Google Search는 사실 확인·공식 발표·추가 맥락 보완에만 사용한다.
 3. 검색 결과의 다른 유명 뉴스를 새 주제로 대체하지 않는다.
 4. candidateId를 절대 바꾸지 않는다.
-5. summary 첫 문장은 참고소스에서 확인된 핵심을 요약한다.
-6. 원문 주장과 웹 검증 결과가 다르면 차이를 명확하게 쓴다.
-7. 원문 게시일이 선택 주간과 달라도 포함한다. 날짜 필터링 금지.
-8. verificationUrls에는 웹 검증에 사용한 실제 URL만 넣는다.
-9. watchpoints에는 유튜브에서 직접 검증·비교·시연할 포인트를 포함해도 된다.`,
+5. title은 카드에서 한눈에 읽히도록 18~34자 안팎의 짧은 제목으로 만든다. 원문 전체 문장을 그대로 복사하지 않는다.
+   가능하면 유튜브 소재처럼 궁금증이 생기되 과장·낚시는 피한다. 예: "WebMCP, AI가 웹을 직접 쓰기 시작했다", "GPT-5.6 컨텍스트 100만 토큰 열렸다".
+6. summary 첫 문장은 참고소스에서 확인된 핵심을 요약한다.
+7. ${unifiedContentGuidance("news",true)}
+8. 원문 주장과 웹 검증 결과가 다르면 핵심내용 안에서 차이를 명확하게 쓴다.
+9. 원문 게시일이 선택 주간과 달라도 포함한다. 날짜 필터링 금지.
+10. verificationUrls에는 웹 검증에 사용한 실제 URL만 넣는다.`,
     tools:[{type:"google_search"}],
     response_format:{type:"text",mime_type:"application/json",schema}
   });
@@ -3379,20 +3377,17 @@ ${evidence}
       timeLabel:"",
       status:"reported",
       impact:["high","medium","low"].includes(x.impact)?x.impact:"medium",
-      title:x.title||src.rawTitle||"참고소스 주제",
-      summary:x.summary||src.rawSummary||"참고소스에서 수집된 원문 요약을 확인하세요.",
+      title:compactCardTitle(x.title||src.rawTitle||"참고소스 주제",34),
+      summary:x.summary||[
+        src.rawSummary||"참고소스에서 수집된 원문입니다.",
+        src.usefulnessReason||""
+      ].filter(Boolean).join("\n\n"),
       youtubeScript:"",
       youtubeSources:[],
       deepAnalysis:"",
-      whyImportant:x.whyImportant||src.usefulnessReason||"유튜브 콘텐츠 후보로 검토할 가치가 있는 참고소스 항목",
-      outlook:x.outlook||"필요하면 카드의 심층 분석에서 공식 자료와 추가 사실을 검증하세요.",
-      watchpoints:Array.isArray(x.watchpoints)&&x.watchpoints.length
-        ?x.watchpoints
-        :[
-          `원문 핵심: ${src.rawTitle||"참고소스 게시물"}`,
-          "공식 발표·원문 자료와 비교 검증",
-          "유튜브에서 직접 시연하거나 비교할 수 있는 포인트 확인"
-        ],
+      whyImportant:"",
+      outlook:"",
+      watchpoints:[],
       sourcePublishedAt:src.publishedAt||src.rawPublishedAt||"",
       temporalBasis:"",
       primarySourceLabel:src.sourceLabel||"참고소스",
@@ -3450,13 +3445,13 @@ ${report}
 7. temporalBasis에는 dateKey가 왜 그 날짜인지 짧고 구체적으로 적는다.
    예: "NVIDIA IR 공식 실적발표 캘린더", "BLS CPI release schedule", "8/27 법원 선고기일".
 8. scheduled는 선택 주간 안의 날짜가 실제 확인된 미래 일정에만 사용한다.
-9. summary는 약 2~4문장으로 충분히 설명한다.
-10. whyImportant는 1~3문장.
-11. outlook은 1~3문장.
-12. watchpoints는 2~4개.
-13. 같은 사건을 기사별로 여러 카드로 만들지 않는다.
-14. 핵심 이슈 8~15개 정도를 우선한다.
-15. sourceUrls에는 제공된 실제 URL만 사용하며 URL을 지어내지 않는다.
+9. title은 18~34자 안팎으로 짧고 선명하게 작성한다. 긴 기사 제목을 그대로 복사하지 않는다.
+   필요하면 유튜브 카드 제목처럼 궁금증이 생기게 표현하되 과장·선정성은 피한다.
+10. summary는 '핵심 내용' 하나만 작성한다. ${unifiedContentGuidance("news")}
+11. summary는 보통 3~6문장으로 충분히 설명하고, 주제에 필요한 경우 핵심 수치·변화·활용 맥락을 포함한다.
+12. 같은 사건을 기사별로 여러 카드로 만들지 않는다.
+13. 핵심 이슈 8~15개 정도를 우선한다.
+14. sourceUrls에는 제공된 실제 URL만 사용하며 URL을 지어내지 않는다.
 16. 사용자 참고소스 선행 분석에 ACCESS: OK 후보가 있고 선택 주간·현재 메뉴와 관련된다면,
    그 후보를 일반웹 이슈보다 먼저 카드화한다. 단순히 Google Search의 더 유명한 이슈로 대체하지 않는다.
    관련된 참고소스 후보가 여러 개라면 최대 4개까지 우선 카드로 구성한다.
@@ -3483,9 +3478,6 @@ ${report}
             impact:{type:"string",enum:["high","medium","low"]},
             title:{type:"string"},
             summary:{type:"string"},
-            whyImportant:{type:"string"},
-            outlook:{type:"string"},
-            watchpoints:{type:"array",items:{type:"string"}},
             sourcePublishedAt:{type:"string"},
             temporalBasis:{type:"string"},
             primarySourceLabel:{type:"string"},
@@ -3494,8 +3486,8 @@ ${report}
             sourceUrls:{type:"array",items:{type:"string"}}
           },
           required:[
-            "dateKey","timeLabel","status","impact","title","summary","whyImportant",
-            "outlook","watchpoints","sourcePublishedAt","temporalBasis","primarySourceLabel","primarySourceUrl","primarySourceKind","sourceUrls"
+            "dateKey","timeLabel","status","impact","title","summary",
+            "sourcePublishedAt","temporalBasis","primarySourceLabel","primarySourceUrl","primarySourceKind","sourceUrls"
           ]
         }
       }
@@ -3530,14 +3522,14 @@ ${report}
       timeLabel:x.timeLabel||"",
       status:statusConfig[x.status]?x.status:"reported",
       impact:["high","medium","low"].includes(x.impact)?x.impact:"medium",
-      title:x.title,
+      title:compactCardTitle(x.title||"뉴스",34),
       summary:x.summary||"",
       youtubeScript:"",
       youtubeSources:[],
       deepAnalysis:"",
-      whyImportant:x.whyImportant||"",
-      outlook:x.outlook||"",
-      watchpoints:Array.isArray(x.watchpoints)?x.watchpoints:[],
+      whyImportant:"",
+      outlook:"",
+      watchpoints:[],
       sourcePublishedAt:x.sourcePublishedAt||"",
       temporalBasis:x.temporalBasis||"",
       primarySourceLabel:webOnly?"일반웹":((x.primarySourceLabel||"일반웹").trim()||"일반웹"),
@@ -3704,11 +3696,8 @@ function buildCardDeepPrompt(card){
 [분야] ${currentChannel().label}
 [날짜] ${card.dateKey} ${card.timeLabel||""}
 [제목] ${card.title}
-[핵심 내용] ${card.summary||""}
-[왜 중요한가] ${card.whyImportant||""}
-[현재 전망] ${card.outlook||""}
-[관전 포인트]
-${(card.watchpoints||[]).join("\n")}
+[핵심 내용]
+${mergeLegacyCoreContent(card)||""}
 [현재 출처]
 ${(card.sourceUrls||[]).join("\n")}
 
@@ -4120,9 +4109,9 @@ function flattenCardsForSupabase(){
           title:c.title||"",
           study_range:c.studyRange||"",
           summary:c.summary||"",
-          why_important:c.whyImportant||"",
-          outlook:c.outlook||"",
-          watchpoints:c.watchpoints||[],
+          why_important:"",
+          outlook:"",
+          watchpoints:[],
           source_published_at:c.sourcePublishedAt||"",
           temporal_basis:c.temporalBasis||"",
           primary_source_label:c.primarySourceLabel||"일반웹",
@@ -4257,10 +4246,15 @@ async function pullAllFromSupabase(){
         impact:row.impact||"medium",
         title:row.title||"",
         studyRange:row.study_range||"",
-        summary:row.summary||"",
-        whyImportant:row.why_important||"",
-        outlook:row.outlook||"",
-        watchpoints:Array.isArray(row.watchpoints)?row.watchpoints:[],
+        summary:[
+          row.summary||"",
+          row.why_important||"",
+          row.outlook||"",
+          ...(Array.isArray(row.watchpoints)?row.watchpoints:[])
+        ].map(x=>String(x||"").trim()).filter(Boolean).join("\n\n"),
+        whyImportant:"",
+        outlook:"",
+        watchpoints:[],
         sourcePublishedAt:row.source_published_at||"",
         temporalBasis:row.temporal_basis||"",
         primarySourceLabel:row.primary_source_label||"일반웹",
@@ -4639,6 +4633,10 @@ document.getElementById("importFile").onchange=async e=>{
       ...x,
       id:x.id||crypto.randomUUID(),
       studyRange:x.studyRange||"",
+      summary:mergeLegacyCoreContent(x),
+      whyImportant:"",
+      outlook:"",
+      watchpoints:[],
       primarySourceLabel:x.primarySourceLabel||"일반웹",
       primarySourceProfileUrl:x.primarySourceProfileUrl||"",
       primarySourceUrl:x.primarySourceUrl||"",
