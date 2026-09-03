@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Weekly Intelligence V7.9.2</title>
+<title>AI Weekly Intelligence V7.9.3</title>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -410,9 +410,9 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 }
 
 
-/* V7.9.2 source-first attribution */
+/* V7.9.3 source-first attribution */
 .source-origin-badge{display:inline-flex;align-items:center;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.source-origin-badge.reference{background:rgba(74,207,146,.12);border-color:rgba(74,207,146,.32);color:#72dca9}
+.source-origin-badge.reference{background:#087443;border-color:#20c77a;color:#fff;box-shadow:0 0 0 1px rgba(32,199,122,.10),0 3px 10px rgba(0,0,0,.18);font-weight:950}
 .source-origin-badge.web{background:rgba(135,151,177,.10);border-color:rgba(135,151,177,.25);color:#9aa9bf}
 .source-warning{display:inline-flex;align-items:center;margin-left:6px;padding:2px 6px;border-radius:999px;font-size:8px;font-weight:850;background:#4b3420;color:#ffcb80;border:1px solid #6a4a29}
 .source-helper{margin-top:8px;padding:8px 10px;border-radius:9px;background:rgba(255,190,71,.07);border:1px solid rgba(255,190,71,.18);color:#aebbd0;font-size:9px;line-height:1.55}
@@ -436,7 +436,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .source-test-result.error{border-color:#743746;background:#2a151c;color:#ff9aaa}
 
 
-/* V7.9.2 board visibility */
+/* V7.9.3 board visibility */
 .board-summary{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:10px
 }
@@ -464,6 +464,20 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
 .production-source{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:8px;border:1px solid #33445f;background:#111d30;color:#a9c2e8;text-decoration:none;font-size:9px;font-weight:800;max-width:280px}
 .production-source:hover{border-color:#4d8aff;color:#dce9ff}
 .production-source .kind{opacity:.72;font-size:8px}
+
+
+.detail-footer-nav{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap
+}
+.detail-nav-btn{
+  min-width:76px
+}
+.detail-card-position{
+  min-width:64px;text-align:center;padding:6px 9px;border-radius:8px;
+  border:1px solid #344762;background:#101a2c;color:#aabbd2;
+  font-size:10px;font-weight:900
+}
+#detailDeleteBtn{margin-right:auto}
 
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -496,8 +510,8 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
   <div class="brand">
     <div class="brand-logo">W</div>
     <div>
-      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.9.2</span></div>
-      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.9.2</div>
+      <div class="brand-title">AI Weekly Intelligence <span class="app-version">V7.9.3</span></div>
+      <div class="brand-sub">Fast Briefing · Deep Dive · YouTube Creator · V7.9.3</div>
     </div>
   </div>
 
@@ -661,6 +675,12 @@ button,input,textarea,select{font:inherit} button{cursor:pointer}
       <div class="action-status" id="detailActionStatus"></div>
     </div>
     <div class="modal-footer">
+      <button class="danger-btn" id="detailDeleteBtn">삭제</button>
+      <div class="detail-footer-nav">
+        <button class="secondary-btn detail-nav-btn" id="detailPrevBtn">← 이전</button>
+        <span class="detail-card-position" id="detailCardPosition">1 / 1</span>
+        <button class="secondary-btn detail-nav-btn" id="detailNextBtn">다음 →</button>
+      </div>
       <button class="secondary-btn" id="deepResearchBtn"><span class="btn-spinner"></span><span class="btn-label">🔍 심층 분석</span></button>
       <button class="primary-btn" id="detailYoutubeBtn"><span class="btn-spinner"></span><span class="btn-label">▶ 유튜브 콘텐츠 생성</span></button>
     </div>
@@ -1459,7 +1479,56 @@ function moveCard(id,newDate){
 /* ==========================================================
    6B. READ-ONLY DETAIL
 ========================================================== */
-function openDetailModal(cardId){
+function getDetailCardSequence(){
+  const cards=[...getCards()];
+  return cards.sort((a,b)=>{
+    const dateCmp=String(a.dateKey||"").localeCompare(String(b.dateKey||""));
+    if(dateCmp)return dateCmp;
+
+    // 같은 날짜에는 보드와 비슷하게 중요도 높은 카드 우선.
+    const impactCmp=importanceScore(b.impact)-importanceScore(a.impact);
+    if(impactCmp)return impactCmp;
+
+    const timeCmp=String(a.timeLabel||"").localeCompare(String(b.timeLabel||""));
+    if(timeCmp)return timeCmp;
+
+    return String(a.title||"").localeCompare(String(b.title||""),"ko");
+  });
+}
+
+function updateDetailNavigation(cardId){
+  const sequence=getDetailCardSequence();
+  const index=sequence.findIndex(x=>x.id===cardId);
+  const prevBtn=document.getElementById("detailPrevBtn");
+  const nextBtn=document.getElementById("detailNextBtn");
+  const position=document.getElementById("detailCardPosition");
+
+  if(index<0){
+    prevBtn.disabled=true;
+    nextBtn.disabled=true;
+    position.textContent=`0 / ${sequence.length}`;
+    return;
+  }
+
+  prevBtn.disabled=index<=0;
+  nextBtn.disabled=index>=sequence.length-1;
+  prevBtn.dataset.targetId=index>0?sequence[index-1].id:"";
+  nextBtn.dataset.targetId=index<sequence.length-1?sequence[index+1].id:"";
+  position.textContent=`${index+1} / ${sequence.length}`;
+}
+
+function moveDetailCard(direction){
+  const currentId=document.getElementById("detailCardId").value;
+  const sequence=getDetailCardSequence();
+  const index=sequence.findIndex(x=>x.id===currentId);
+  if(index<0)return;
+
+  const targetIndex=index+direction;
+  if(targetIndex<0||targetIndex>=sequence.length)return;
+  openDetailModal(sequence[targetIndex].id,{keepOpen:true});
+}
+
+function openDetailModal(cardId,{keepOpen=false}={}){
   const card=getCards().find(x=>x.id===cardId);if(!card)return;
   document.getElementById("detailCardId").value=cardId;
 
@@ -1489,7 +1558,8 @@ function openDetailModal(cardId){
   resetLoadingButton("detailYoutubeBtn","▶ 유튜브 콘텐츠 생성");
   document.getElementById("deepResearchBtn").style.display=study?"none":"inline-flex";
   document.getElementById("detailYoutubeBtn").style.display="inline-flex";
-  showModal("detailModal");
+  updateDetailNavigation(cardId);
+  if(!keepOpen)showModal("detailModal");
 }
 
 function renderDetailSources(card){
@@ -1547,6 +1617,50 @@ function renderDetailGenerated(card){
 function setDetailStatus(text,type=""){
   const el=document.getElementById("detailActionStatus");el.textContent=text;el.className=`action-status ${type}`;
 }
+
+document.getElementById("detailPrevBtn").onclick=()=>moveDetailCard(-1);
+document.getElementById("detailNextBtn").onclick=()=>moveDetailCard(1);
+
+document.getElementById("detailDeleteBtn").onclick=async()=>{
+  const id=document.getElementById("detailCardId").value;
+  const sequence=getDetailCardSequence();
+  const index=sequence.findIndex(x=>x.id===id);
+  if(index<0)return;
+
+  // 삭제 후에는 원래 다음 카드, 마지막 카드였다면 이전 카드를 이어서 보여준다.
+  const fallbackId=
+    sequence[index+1]?.id ||
+    sequence[index-1]?.id ||
+    "";
+
+  const btn=document.getElementById("detailDeleteBtn");
+  btn.disabled=true;
+  btn.textContent="삭제 중...";
+
+  try{
+    if(isSupabaseReady())await deleteRemoteCardsByIds([id]);
+
+    state.boards[state.channel][weekKey()]=getCards().filter(x=>x.id!==id);
+    saveState();
+    renderBoard();
+
+    if(fallbackId && getCards().some(x=>x.id===fallbackId)){
+      openDetailModal(fallbackId,{keepOpen:true});
+      showToast("카드를 삭제하고 다음 카드로 이동했습니다.");
+    }else{
+      hideModal("detailModal");
+      showToast("카드를 삭제했습니다. 이번 주에 남은 카드가 없습니다.");
+    }
+  }catch(error){
+    console.error(error);
+    setDetailStatus(`카드 삭제 실패: ${error.message||error}`,"error");
+  }finally{
+    btn.disabled=false;
+    btn.textContent="삭제";
+  }
+};
+
+
 
 function setLoadingButton(id,on,label){
   const btn=document.getElementById(id),labelEl=btn.querySelector(".btn-label");
@@ -1688,8 +1802,10 @@ document.getElementById("detailYoutubeBtn").onclick=async()=>{
     saveState();
     if(isSupabaseReady())await pushAllToSupabase();
     renderBoard();
-    renderDetailGenerated(card);
-    setDetailStatus("✓ 유튜브 스크립트와 제작 참고 링크를 카드에 저장했습니다.","success");
+    if(document.getElementById("detailCardId").value===card.id){
+      renderDetailGenerated(card);
+      setDetailStatus("✓ 유튜브 스크립트와 제작 참고 링크를 카드에 저장했습니다.","success");
+    }
   }
   catch(e){setDetailStatus(e.message||"스크립트 생성 오류","error")}
   finally{resetLoadingButton("detailYoutubeBtn","▶ 유튜브 콘텐츠 생성")}
@@ -3698,7 +3814,12 @@ document.getElementById("deepResearchBtn").onclick=async()=>{
     const result=await runDeepResearch(buildCardDeepPrompt(card));
     const text=extractLastText(result);if(!text)throw new Error("심층 분석 결과가 비어 있습니다.");
     card.deepAnalysis=text.trim();card.sourceUrls=[...new Set([...(card.sourceUrls||[]),...extractCitations(result)])].filter(validHttpUrl);
-    saveState();renderBoard();renderDetailSources(card);renderDetailGenerated(card);setDetailStatus("✓ 심층 분석을 카드에 저장했습니다.","success");
+    saveState();renderBoard();
+    if(document.getElementById("detailCardId").value===card.id){
+      renderDetailSources(card);
+      renderDetailGenerated(card);
+      setDetailStatus("✓ 심층 분석을 카드에 저장했습니다.","success");
+    }
   }catch(e){setDetailStatus(e.message||"심층 분석 오류","error")}
   finally{resetLoadingButton("deepResearchBtn","🔍 심층 분석")}
 };
@@ -4676,7 +4797,21 @@ document.querySelectorAll(".modal-backdrop").forEach(backdrop=>{
   backdrop.addEventListener("mousedown",e=>{if(e.target===backdrop)hideModal(backdrop.id)});
 });
 document.addEventListener("keydown",e=>{
-  if(e.key==="Escape")document.querySelectorAll(".modal-backdrop.show").forEach(x=>x.classList.remove("show"));
+  if(e.key==="Escape"){
+    document.querySelectorAll(".modal-backdrop.show").forEach(x=>x.classList.remove("show"));
+    return;
+  }
+
+  if(document.getElementById("detailModal")?.classList.contains("show")){
+    // 입력창이 없는 읽기 모달이므로 좌우 방향키로 빠르게 카드 탐색.
+    if(e.key==="ArrowLeft"){
+      e.preventDefault();
+      moveDetailCard(-1);
+    }else if(e.key==="ArrowRight"){
+      e.preventDefault();
+      moveDetailCard(1);
+    }
+  }
 });
 
 function splitLines(text){return text.split("\n").map(x=>x.trim()).filter(Boolean)}
